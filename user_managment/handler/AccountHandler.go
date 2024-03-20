@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database-example/dto"
 	"database-example/model"
 	"database-example/service"
 	"encoding/json"
@@ -12,7 +13,7 @@ import (
 
 type AccountHandler struct {
 	AccountService *service.AccountService
-	UserService *service.UserService
+	UserService    *service.UserService
 }
 
 // Function for getting Account by given id
@@ -41,22 +42,22 @@ func (handler *AccountHandler) GetAll(writer http.ResponseWriter, req *http.Requ
 		return
 	}
 	/*allAccounts := *accounts
-	for i := range allAccounts {
-        user, err := handler.UserService.FindUser(allAccounts[i].ID) 
-        if err != nil {
-            // Handle error if necessary
-            continue
-        }
-        allAccounts[i].User = user
-    }
+		for i := range allAccounts {
+	        user, err := handler.UserService.FindUser(allAccounts[i].ID)
+	        if err != nil {
+	            // Handle error if necessary
+	            continue
+	        }
+	        allAccounts[i].User = user
+	    }
 
-	allAccounts, err := json.MarshalIndent(accounts, "", "    ")
-    if err != nil {
-        // Handle error if necessary
-        writer.Header().Set("Content-Type", "application/json")
-        writer.WriteHeader(http.StatusInternalServerError)
-        return
-    }*/
+		allAccounts, err := json.MarshalIndent(accounts, "", "    ")
+	    if err != nil {
+	        // Handle error if necessary
+	        writer.Header().Set("Content-Type", "application/json")
+	        writer.WriteHeader(http.StatusInternalServerError)
+	        return
+	    }*/
 
 	writer.WriteHeader(http.StatusOK)
 	json.NewEncoder(writer).Encode(accounts)
@@ -82,3 +83,27 @@ func (handler *AccountHandler) Create(writer http.ResponseWriter, req *http.Requ
 }
 
 //TODO: Function for blocking an account
+
+func (handler *AccountHandler) GetByUsernameAndPassword(writer http.ResponseWriter, req *http.Request) {
+	// Decode the request body to get credentials
+	var creds dto.Credentials
+	err := json.NewDecoder(req.Body).Decode(&creds)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Call the service to find the account by username and password
+	account, err := handler.AccountService.FindAccountByUsernameAndPassword(creds.Username, creds.Password)
+	if err != nil {
+		writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	// Set response content type and status code
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+
+	// Encode the account into JSON and send the response
+	json.NewEncoder(writer).Encode(account)
+}

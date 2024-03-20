@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"bytes"
 	"database-example/dto"
+	"database-example/model"
 	"database-example/service"
 	"encoding/json"
 	"net/http"
@@ -42,25 +44,50 @@ func (loginHandler *LoginHandler) Login(w http.ResponseWriter, r *http.Request) 
 	err := json.NewDecoder(r.Body).Decode(&creds)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to decode request body\n"))
 		return
 	}
 
-	// Authenticate user using the provided credentials
-	account, _ := loginHandler.AccountService.FindAccountByUsernameAndPassword(creds.Username, creds.Password)
-	if account == nil {
+	credsJSON, err := json.Marshal(creds)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to marshal credentials\n"))
+		return
+	}
+
+	getByUsernameAndPasswordURL := "http://localhost:8081/accounts/get"
+	resp, err := http.Post(getByUsernameAndPasswordURL, "application/json", bytes.NewBuffer(credsJSON))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to make POST request to User Management microservice\n"))
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
 		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Failed to authenticate user\n"))
 		return
 	}
 
-	// Generate JWT token if authentication succeeds
+	var account model.Account
+	if err := json.NewDecoder(resp.Body).Decode(&account); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to decode account data\n"))
+		return
+	}
+
 	tokenString, err := createToken(creds.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to generate token\n"))
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
+	w.Write([]byte("You've successfully logged in!"))
 	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
+
 }

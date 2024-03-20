@@ -33,3 +33,12 @@ func (service *AccountService) Create(account *model.Account) error {
 	}
 	return nil
 }
+
+func (service *AccountService) FindAccountByUsernameAndPassword(username, password string) (*model.Account, error) {
+	// Perform a database query to find the account by username and password
+	account, err := service.AccountRepo.FindByUsernameAndPassword(username, password)
+	if err != nil {
+		return nil, err
+	}
+	return account, nil
+}
