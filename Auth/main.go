@@ -21,40 +21,37 @@ func initDB() *gorm.DB {
 		return nil
 	}
 
-	database.AutoMigrate(&model.Student{})
-	database.Exec("INSERT IGNORE INTO students VALUES ('aec7e123-233d-4a09-a289-75308ea5b7e6', 'Marko Markovic', 'Graficki dizajn')")
+	database.AutoMigrate(&model.Account{})
+	database.AutoMigrate(&model.User{})
 
-	database.AutoMigrate(&model.Rating{})
-	database.AutoMigrate(&model.Blog{})
-	database.AutoMigrate(&model.User{}, &model.Account{})
-
-	account := model.Account{
-		Username:  "aya",
-		Password:  "123",
-		Email:     "aya@email.com",
-		Role:      0,
-		IsBlocked: false,
-	}
 	user := model.User{
 		Name:      "Andjela",
 		Surname:   "Radojevic",
 		Picture:   "slika.png",
 		Biography: "Opsi",
 		Moto:      "Ide gas",
-		Account:   account,
 	}
-	database.Create(&user)
+	account := model.Account{
+		Username:  "aya",
+		Password:  "123",
+		Email:     "aya@email.com",
+		Role:      0,
+		IsBlocked: false,
+		User:      user,
+	}
+	database.Create(&account)
 
 	return database
 }
 
-func startServer(handler *handler.StudentHandler) {
+func startServer(accountHandler *handler.AccountHandler, loginHandler *handler.LoginHandler) {
 	router := mux.NewRouter().StrictSlash(true)
 
-	router.HandleFunc("/students/{id}", handler.Get).Methods("GET")
-	router.HandleFunc("/students", handler.Create).Methods("POST")
+	router.HandleFunc("/accounts/{id}", accountHandler.Get).Methods("GET")
+	router.HandleFunc("/accounts", accountHandler.Create).Methods("POST")
+	router.HandleFunc("/accounts/log", accountHandler.GetByUsernameAndPassword).Methods("POST")
 
-	router.HandleFunc("/students", handler.Create).Methods("POST")
+	router.HandleFunc("/login", loginHandler.Login).Methods("POST")
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
@@ -67,9 +64,11 @@ func main() {
 		print("FAILED TO CONNECT TO DB")
 		return
 	}
-	repo := &repo.StudentRepository{DatabaseConnection: database}
-	service := &service.StudentService{StudentRepo: repo}
-	handler := &handler.StudentHandler{StudentService: service}
+	accountRepo := &repo.AccountRepository{DatabaseConnection: database}
+	accountService := &service.AccountService{AccountRepo: accountRepo}
+	accountHandler := &handler.AccountHandler{AccountService: accountService}
 
-	startServer(handler)
+	loginHandler := &handler.LoginHandler{AccountService: accountService}
+
+	startServer(accountHandler, loginHandler)
 }
