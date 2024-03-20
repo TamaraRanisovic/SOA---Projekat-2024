@@ -55,3 +55,13 @@ func (repo *AccountRepository) BlockById(id string) (error) {
 	println("Rows affected: ", dbResult.RowsAffected)
 	return nil
 }
+
+func (repo *AccountRepository) FindByUsernameAndPassword(username, password string) (*model.Account, error) {
+	var account model.Account
+
+	err := repo.DatabaseConnection.Where("username = ? AND password = ?", username, password).First(&account).Error
+	if err != nil {
+		return nil, err
+	}
+	return &account, nil
+}
