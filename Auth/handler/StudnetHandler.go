@@ -20,8 +20,8 @@ func (handler *StudentHandler) Get(writer http.ResponseWriter, req *http.Request
 	student, err := handler.StudentService.FindStudent(id)
 	writer.Header().Set("Content-Type", "application/json")
 	if err != nil {
-	writer.WriteHeader(http.StatusNotFound)
-	return
+		writer.WriteHeader(http.StatusNotFound)
+		return
 	}
 	writer.WriteHeader(http.StatusOK)
 	json.NewEncoder(writer).Encode(student)
