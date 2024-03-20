@@ -17,14 +17,16 @@ type LoginHandler struct {
 var jwtKey = []byte("my_secret_key")
 
 type Claims struct {
-	Username string `json:"username"`
+	Username string     `json:"username"`
+	Role     model.Role `json:"role"`
 	jwt.StandardClaims
 }
 
-func createToken(username string) (string, error) {
+func createToken(username string, role model.Role) (string, error) {
 	expirationTime := time.Now().Add(5 * time.Minute)
 	claims := &Claims{
 		Username: username,
+		Role:     role,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 		},
@@ -75,7 +77,7 @@ func (loginHandler *LoginHandler) Login(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tokenString, err := createToken(creds.Username)
+	tokenString, err := createToken(creds.Username, account.Role)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Failed to generate token\n"))
@@ -88,4 +90,37 @@ func (loginHandler *LoginHandler) Login(w http.ResponseWriter, r *http.Request) 
 	w.Write([]byte("You've successfully logged in!\n"))
 	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
 
+}
+
+func (loginHandler *LoginHandler) DecodeToken(w http.ResponseWriter, r *http.Request) {
+	var tokenBody struct {
+		Token string `json:"token"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&tokenBody)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Failed to decode request body\n"))
+		return
+	}
+
+	token, err := jwt.ParseWithClaims(tokenBody.Token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Failed to parse token: " + err.Error() + "\n"))
+		return
+	}
+
+	claims, ok := token.Claims.(*Claims)
+	if !ok || !token.Valid {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Invalid token\n"))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(claims)
 }

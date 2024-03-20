@@ -46,6 +46,7 @@ func startServer(loginHandler *handler.LoginHandler) {
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/login", loginHandler.Login).Methods("POST")
+	router.HandleFunc("/decode", loginHandler.DecodeToken).Methods("POST")
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")

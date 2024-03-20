@@ -84,7 +84,7 @@ func (handler *AccountHandler) Create(writer http.ResponseWriter, req *http.Requ
 }
 
 // TODO: Function for blocking an account
-func (handler AccountHandler) Block(writer http.ResponseWriter, req http.Request) {
+func (handler AccountHandler) Block(writer http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	log.Printf("Account with id %s", id)
 
