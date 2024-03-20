@@ -41,6 +41,23 @@ func initDB() *gorm.DB {
 	}
 	database.Create(&account)
 
+	user1 := model.User{
+		Name:      "Tamara",
+		Surname:   "Ranisovic",
+		Picture:   "slika.png",
+		Biography: "Opis",
+		Moto:      "Ide gas",
+	}
+	account1 := model.Account{
+		Username:  "tamara",
+		Password:  "123",
+		Email:     "tamara@email.com",
+		Role:      0,
+		IsBlocked: false,
+		User:      user1,
+	}
+	database.Create(&account1)
+
 	return database
 }
 
@@ -48,6 +65,8 @@ func startServer(handler *handler.AccountHandler) {
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/admin/all-accounts/", handler.GetAll).Methods("GET")
+	router.HandleFunc("/admin/all-accounts/{id}/", handler.Get).Methods("GET")
+	router.HandleFunc("/admin/block/{id}/", handler.Block).Methods("PUT")
 	router.HandleFunc("/add-account/", handler.Create).Methods("POST")
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
