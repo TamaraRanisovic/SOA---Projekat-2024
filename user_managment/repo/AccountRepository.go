@@ -12,7 +12,7 @@ type AccountRepository struct {
 
 func (repo *AccountRepository) FindById(id string) (model.Account, error) {
 	account := model.Account{}
-	dbResult := repo.DatabaseConnection.First(&account, "id = ?", id)
+	dbResult := repo.DatabaseConnection.Joins("User").First(&account, "id = ?", id)
 	if dbResult != nil {
 		return account, dbResult.Error
 	}
@@ -21,7 +21,7 @@ func (repo *AccountRepository) FindById(id string) (model.Account, error) {
 
 func (repo *AccountRepository) FindAll() ([]model.Account, error) {
 	var accounts = []model.Account{}
-	dbResult := repo.DatabaseConnection.Find(&accounts)
+	dbResult := repo.DatabaseConnection.Joins("User").Find(&accounts)
 	if dbResult != nil {
 		return accounts, dbResult.Error
 	}
@@ -29,10 +29,29 @@ func (repo *AccountRepository) FindAll() ([]model.Account, error) {
 }
 
 func (repo *AccountRepository) CreateAccount(account *model.Account) error {
-	dbResult := repo.DatabaseConnection.Create(account)
+	
+	if account.Role == 0 {
+		println("Cannot add Account with this Role")
+		return nil
+	}
+		dbResult := repo.DatabaseConnection.Create(account)
+	
 	if dbResult.Error != nil {
 		return dbResult.Error
 	}
+	
+	println("Rows affected: ", dbResult.RowsAffected)
+	return nil
+}
+
+func (repo *AccountRepository) BlockById(id string) (error) {
+	account := model.Account{}
+	dbResult := repo.DatabaseConnection.First(&account, "id = ?", id).Update("IsBlocked", true)
+
+	if dbResult.Error != nil {
+		return dbResult.Error
+	}
+
 	println("Rows affected: ", dbResult.RowsAffected)
 	return nil
 }

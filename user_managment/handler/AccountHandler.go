@@ -12,7 +12,7 @@ import (
 
 type AccountHandler struct {
 	AccountService *service.AccountService
-	UserService *service.UserService
+	UserService    *service.UserService
 }
 
 // Function for getting Account by given id
@@ -40,26 +40,27 @@ func (handler *AccountHandler) GetAll(writer http.ResponseWriter, req *http.Requ
 		writer.WriteHeader(http.StatusNotFound)
 		return
 	}
-	/*allAccounts := *accounts
-	for i := range allAccounts {
-        user, err := handler.UserService.FindUser(allAccounts[i].ID) 
-        if err != nil {
-            // Handle error if necessary
-            continue
-        }
-        allAccounts[i].User = user
-    }
+	//allAccounts := *accounts
+	// for _,i := range allAccounts {
+	//     user, err := handler.UserService.FindUser(string(i.ID.ID()))
+	//     if err != nil {
+	//         // Handle error if necessary
+	//         continue
+	//     }
+	//     allAccounts[i].User = user
+	// }
 
-	allAccounts, err := json.MarshalIndent(accounts, "", "    ")
-    if err != nil {
-        // Handle error if necessary
-        writer.Header().Set("Content-Type", "application/json")
-        writer.WriteHeader(http.StatusInternalServerError)
-        return
-    }*/
+	/*newAccounts, err := json.MarshalIndent(allAccounts, "", "    ")
+	if err != nil {
+		// Handle error if necessary
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}*/
 
 	writer.WriteHeader(http.StatusOK)
 	json.NewEncoder(writer).Encode(accounts)
+	// return response
 }
 
 // Function for creating a new account
@@ -82,3 +83,16 @@ func (handler *AccountHandler) Create(writer http.ResponseWriter, req *http.Requ
 }
 
 //TODO: Function for blocking an account
+func (handler *AccountHandler) Block(writer http.ResponseWriter, req *http.Request) {
+	id := mux.Vars(req)["id"]
+	log.Printf("Account with id %s", id)
+
+	err := handler.AccountService.BlockAccount(id)
+
+	writer.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+	writer.WriteHeader(http.StatusOK)
+}

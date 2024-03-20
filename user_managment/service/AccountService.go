@@ -33,3 +33,11 @@ func (service *AccountService) Create(account *model.Account) error {
 	}
 	return nil
 }
+
+func (service *AccountService) BlockAccount(id string) error {
+	err := service.AccountRepo.BlockById(id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
