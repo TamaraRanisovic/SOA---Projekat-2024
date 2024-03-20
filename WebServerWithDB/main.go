@@ -23,6 +23,16 @@ func initDB() *gorm.DB {
 
 	database.AutoMigrate(&model.Student{})
 	database.Exec("INSERT IGNORE INTO students VALUES ('aec7e123-233d-4a09-a289-75308ea5b7e6', 'Marko Markovic', 'Graficki dizajn')")
+
+	database.AutoMigrate(&model.Account{})
+	database.Exec("INSERT IGNORE INTO `students`.`accounts`  VALUES ('1','aya', '123', 'aya@email.com', 'Administrator', '0')")
+
+	database.AutoMigrate(&model.User{})
+	database.Exec("INSERT INTO `students`.`users` (`id`, `username`, `password`, `email`, `role`, `is_blocked`, `name`, `surname`, `picture`, `biography`, `moto`) VALUES ('1', 'aya', '123', 'aya@email.com', 'Administrator', '0', 'Andjela', 'Radojevic', 'slika.png', 'Opsi', 'Ide gas')")
+
+	database.AutoMigrate(&model.Rating{})
+	database.AutoMigrate(&model.Blog{})
+	
 	return database
 }
 
@@ -34,7 +44,7 @@ func startServer(handler *handler.StudentHandler) {
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8081", router))
 }
 
 func main() {
