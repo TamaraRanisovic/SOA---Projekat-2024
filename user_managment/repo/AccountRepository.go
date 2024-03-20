@@ -38,10 +38,8 @@ func (repo *AccountRepository) CreateAccount(account *model.Account) error {
 }
 
 func (repo *AccountRepository) FindByUsernameAndPassword(username, password string) (*model.Account, error) {
-	// Define a variable to store the retrieved account
 	var account model.Account
 
-	// Perform a database query to find the account by username and password
 	err := repo.DatabaseConnection.Where("username = ? AND password = ?", username, password).First(&account).Error
 	if err != nil {
 		return nil, err

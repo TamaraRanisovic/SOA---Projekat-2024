@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database-example/dto"
 	"database-example/model"
-	"database-example/service"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -13,7 +12,6 @@ import (
 )
 
 type LoginHandler struct {
-	AccountService *service.AccountService
 }
 
 var jwtKey = []byte("my_secret_key")
@@ -87,7 +85,7 @@ func (loginHandler *LoginHandler) Login(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	w.Write([]byte("You've successfully logged in!"))
+	w.Write([]byte("You've successfully logged in!\n"))
 	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
 
 }

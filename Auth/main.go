@@ -3,8 +3,6 @@ package main
 import (
 	"database-example/handler"
 	"database-example/model"
-	"database-example/repo"
-	"database-example/service"
 	"log"
 	"net/http"
 
@@ -44,12 +42,8 @@ func initDB() *gorm.DB {
 	return database
 }
 
-func startServer(accountHandler *handler.AccountHandler, loginHandler *handler.LoginHandler) {
+func startServer(loginHandler *handler.LoginHandler) {
 	router := mux.NewRouter().StrictSlash(true)
-
-	router.HandleFunc("/accounts/{id}", accountHandler.Get).Methods("GET")
-	router.HandleFunc("/accounts", accountHandler.Create).Methods("POST")
-	router.HandleFunc("/accounts/log", accountHandler.GetByUsernameAndPassword).Methods("POST")
 
 	router.HandleFunc("/login", loginHandler.Login).Methods("POST")
 
@@ -64,11 +58,8 @@ func main() {
 		print("FAILED TO CONNECT TO DB")
 		return
 	}
-	accountRepo := &repo.AccountRepository{DatabaseConnection: database}
-	accountService := &service.AccountService{AccountRepo: accountRepo}
-	accountHandler := &handler.AccountHandler{AccountService: accountService}
 
-	loginHandler := &handler.LoginHandler{AccountService: accountService}
+	loginHandler := &handler.LoginHandler{}
 
-	startServer(accountHandler, loginHandler)
+	startServer(loginHandler)
 }
