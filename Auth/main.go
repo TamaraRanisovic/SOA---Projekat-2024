@@ -2,7 +2,6 @@ package main
 
 import (
 	"database-example/handler"
-	"database-example/model"
 	"log"
 	"net/http"
 
@@ -11,6 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Initialize the database connection
 func initDB() *gorm.DB {
 	connectionStr := "root:root@tcp(localhost:3306)/students?charset=utf8mb4&parseTime=True&loc=Local"
 	database, err := gorm.Open(mysql.Open(connectionStr), &gorm.Config{})
@@ -19,37 +19,21 @@ func initDB() *gorm.DB {
 		return nil
 	}
 
-	database.AutoMigrate(&model.Account{})
-	database.AutoMigrate(&model.User{})
-
-	user := model.User{
-		Name:      "Andjela",
-		Surname:   "Radojevic",
-		Picture:   "slika.png",
-		Biography: "Opsi",
-		Moto:      "Ide gas",
-	}
-	account := model.Account{
-		Username:  "aya",
-		Password:  "123",
-		Email:     "aya@email.com",
-		Role:      0,
-		IsBlocked: false,
-		User:      user,
-	}
-	database.Create(&account)
-
 	return database
 }
 
+// Start the HTTP server
 func startServer(loginHandler *handler.LoginHandler) {
 	router := mux.NewRouter().StrictSlash(true)
 
+	// Define routes
 	router.HandleFunc("/login", loginHandler.Login).Methods("POST")
 	router.HandleFunc("/decode", loginHandler.DecodeToken).Methods("POST")
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
+
+	// Start the HTTP server on port 8082
 	log.Fatal(http.ListenAndServe(":8082", router))
 }
 

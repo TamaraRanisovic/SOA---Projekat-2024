@@ -6,8 +6,8 @@ type Role int
 // Declare related constants for each role starting with index 1
 const (
 	Administrator Role = iota + 1 // EnumIndex = 1
-	Guide                       // EnumIndex = 2
-	Tourist                      // EnumIndex = 3
+	Guide                         // EnumIndex = 2
+	Tourist                       // EnumIndex = 3
 )
 
 // String - Creating common behavior - give the type a String function
