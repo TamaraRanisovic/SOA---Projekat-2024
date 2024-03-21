@@ -62,7 +62,7 @@ func (loginHandler *LoginHandler) Login(w http.ResponseWriter, r *http.Request) 
 		w.Write([]byte("Failed to make POST request to User Management microservice\n"))
 		return
 	}
-	defer resp.Body.Close()
+	
 
 	if resp.StatusCode != http.StatusOK {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -83,12 +83,14 @@ func (loginHandler *LoginHandler) Login(w http.ResponseWriter, r *http.Request) 
 		w.Write([]byte("Failed to generate token\n"))
 		return
 	}
-
+	w.Header().Set("Authorization", "Bearer "+tokenString)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	w.Write([]byte("You've successfully logged in!\n"))
 	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
+
+	defer resp.Body.Close()
 
 }
 
