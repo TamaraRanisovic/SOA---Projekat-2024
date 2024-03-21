@@ -69,6 +69,8 @@ func startServer(handler *handler.AccountHandler) {
 	router.HandleFunc("/admin/block/{id}/", handler.Block).Methods("PUT")
 	router.HandleFunc("/add-account/", handler.Create).Methods("POST")
 
+	router.HandleFunc("/accounts/get", handler.GetByUsernameAndPassword).Methods("POST")
+
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
 	log.Fatal(http.ListenAndServe(":8081", router))
