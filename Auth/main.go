@@ -46,10 +46,11 @@ func startServer(loginHandler *handler.LoginHandler) {
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/login", loginHandler.Login).Methods("POST")
+	router.HandleFunc("/decode", loginHandler.DecodeToken).Methods("POST")
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8082", router))
 }
 
 func main() {
