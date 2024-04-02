@@ -65,7 +65,7 @@ func (loginHandler *LoginHandler) Login(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Make a POST request to User Management microservice to authenticate the user
-	getByUsernameAndPasswordURL := "http://localhost:8081/accounts/get"
+	getByUsernameAndPasswordURL := "http://user-management-service:8081/accounts/get"
 	resp, err := http.Post(getByUsernameAndPasswordURL, "application/json", bytes.NewBuffer(credsJSON))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -1,0 +1,60 @@
+version: "3.7"
+
+services:
+  user-management-service:
+    build:
+      context: ./user_managment
+      dockerfile: Dockerfile
+    container_name: user_management_service
+    restart: always
+    networks:
+      - servers
+    ports:
+      - 8081:8081
+    depends_on:
+      - database
+
+  auth-service:
+    build:
+      context: ./Auth
+      dockerfile: Dockerfile
+    container_name: auth_service
+    restart: always
+    networks:
+      - servers
+    ports:
+      - 8082:8082
+    depends_on:
+      - database
+
+  database:
+    image: mysql
+    container_name: mysql
+    restart: always
+    networks:
+      - servers
+    ports:
+      - 4000:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: students
+    volumes:
+      - database-data:/var/lib/mysql
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    networks:
+      - servers
+    ports:
+      - 8083:8080
+
+volumes:
+  database-data:
+    name: server-database
+
+networks:
+  servers:
+    name: servers
+    driver: bridge
