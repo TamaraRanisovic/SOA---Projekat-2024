@@ -14,9 +14,7 @@ type BlogHandler struct {
 	BlogService *service.BlogService
 }
 
-// Function for getting Account by given id
-// Printing into terminal
-// Returning json object
+// Function for getting blog by given id
 func (handler *BlogHandler) Get(writer http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	log.Printf("Blog with id %s", id)
@@ -30,7 +28,7 @@ func (handler *BlogHandler) Get(writer http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(writer).Encode(blog)
 }
 
-// Function for getting all Accounts
+// Function for getting all blogs
 func (handler *BlogHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
 
 	blogs, err := handler.BlogService.FindAllBlogs()
@@ -44,7 +42,7 @@ func (handler *BlogHandler) GetAll(writer http.ResponseWriter, req *http.Request
 	json.NewEncoder(writer).Encode(blogs)
 }
 
-// Function for creating a new account
+// Function for creating a new blog
 func (handler *BlogHandler) Create(writer http.ResponseWriter, req *http.Request) {
 	var blog model.Blog
 	err := json.NewDecoder(req.Body).Decode(&blog)

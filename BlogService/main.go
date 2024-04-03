@@ -75,6 +75,7 @@ func startServer(handler *handler.BlogHandler) {
 
 	router.HandleFunc("/blog/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/blogs", handler.GetAll).Methods("GET")
+	router.HandleFunc("/add-blog", handler.Create).Methods("POST")
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
