@@ -19,11 +19,14 @@ func (repo *BlogRepository) FindById(id string) (model.Blog, error) {
 }
 
 func (repo *BlogRepository) FindAll() ([]model.Blog, error) {
-	var blogs = []model.Blog{}
-	dbResult := repo.DatabaseConnection.Find(&blogs)
-	if dbResult != nil {
-		return blogs, dbResult.Error
+	var blogs []model.Blog
+
+	// Preload Pictures for each Blog
+	dbResult := repo.DatabaseConnection.Preload("Pictures").Find(&blogs)
+	if dbResult.Error != nil {
+		return nil, dbResult.Error
 	}
+
 	return blogs, nil
 }
 

@@ -27,23 +27,43 @@ func initDB() *gorm.DB {
 	database.AutoMigrate(&model.Blog{})
 
 	// Create a new blog
-	blog := model.Blog{
-		Title:       "Sample Blog",
-		Description: "This is a sample blog description.",
+	blog1 := model.Blog{
+		Title:       "First Blog",
+		Description: "This is a first blog description.",
 		DateCreated: time.Now(),
 	}
 
 	// Save the blog to the database
-	database.Create(&blog)
+	database.Create(&blog1)
 
 	// Create some pictures
-	pictures := []model.Picture{
-		{URL: "picture1.jpg", BlogID: blog.ID},
-		{URL: "picture2.jpg", BlogID: blog.ID},
+	pictures1 := []model.Picture{
+		{URL: "picture1.jpg", BlogID: blog1.ID},
+		{URL: "picture2.jpg", BlogID: blog1.ID},
 	}
 
 	// Save the pictures to the database
-	for _, picture := range pictures {
+	for _, picture := range pictures1 {
+		database.Create(&picture)
+	}
+
+	blog2 := model.Blog{
+		Title:       "Second Blog",
+		Description: "This is a second blog description.",
+		DateCreated: time.Now(),
+	}
+
+	// Save the blog to the database
+	database.Create(&blog2)
+
+	// Create some pictures
+	pictures2 := []model.Picture{
+		{URL: "picture3.jpg", BlogID: blog2.ID},
+		{URL: "picture4.jpg", BlogID: blog2.ID},
+	}
+
+	// Save the pictures to the database
+	for _, picture := range pictures2 {
 		database.Create(&picture)
 	}
 
