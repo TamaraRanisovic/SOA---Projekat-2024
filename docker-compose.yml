@@ -33,8 +33,6 @@ services:
     restart: always
     networks:
       - servers
-    ports:
-      - 4000:3306
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: students
