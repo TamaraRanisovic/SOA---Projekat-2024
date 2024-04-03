@@ -51,6 +51,14 @@ func (handler *BlogHandler) Create(writer http.ResponseWriter, req *http.Request
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	// Validate the JSON data
+	err = model.ValidateJsonBlog(blog)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	err = handler.BlogService.Create(&blog)
 	if err != nil {
 		println("Error while creating a new blog")

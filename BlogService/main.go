@@ -18,12 +18,13 @@ import (
 func initDB() *gorm.DB {
 	connectionStr := "root:root@tcp(localhost:3306)/students?charset=utf8mb4&parseTime=True&loc=Local"
 	database, err := gorm.Open(mysql.Open(connectionStr), &gorm.Config{})
+
 	if err != nil {
 		print(err)
 		return nil
 	}
-	database.AutoMigrate(&model.Picture{})
 
+	database.AutoMigrate(&model.Picture{})
 	database.AutoMigrate(&model.Blog{})
 
 	// Create a new blog
