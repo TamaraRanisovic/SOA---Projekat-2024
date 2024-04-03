@@ -12,7 +12,7 @@ type Blog struct {
 	Title       string    `json:"title" gorm:"not null;type:string"`
 	Description string    `json:"description" gorm:"type:string"`
 	DateCreated time.Time `json:"date_created" gorm:"not null"`
-	PictureURLs []string  `json:"pictures,omitempty" gorm:"-"`
+	Pictures    []Picture `json:"pictures,omitempty" gorm:"foreignKey:BlogID;references:ID"`
 }
 
 func (blog *Blog) BeforeCreate(scope *gorm.DB) error {

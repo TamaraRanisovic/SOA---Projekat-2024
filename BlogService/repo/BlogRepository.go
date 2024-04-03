@@ -11,8 +11,8 @@ type BlogRepository struct {
 
 func (repo *BlogRepository) FindById(id string) (model.Blog, error) {
 	blog := model.Blog{}
-	dbResult := repo.DatabaseConnection.First(&blog, "id = ?", id)
-	if dbResult != nil {
+	dbResult := repo.DatabaseConnection.Preload("Pictures").First(&blog, "id = ?", id)
+	if dbResult.Error != nil {
 		return blog, dbResult.Error
 	}
 	return blog, nil

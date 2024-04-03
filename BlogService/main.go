@@ -73,11 +73,12 @@ func initDB() *gorm.DB {
 func startServer(handler *handler.BlogHandler) {
 	router := mux.NewRouter().StrictSlash(true)
 
-	router.HandleFunc("/blog/all-blogs/", handler.GetAll).Methods("GET")
+	router.HandleFunc("/blog/{id}", handler.Get).Methods("GET")
+	router.HandleFunc("/blogs", handler.GetAll).Methods("GET")
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
-	log.Fatal(http.ListenAndServe(":8081", router))
+	log.Fatal(http.ListenAndServe(":8084", router))
 }
 
 func main() {
