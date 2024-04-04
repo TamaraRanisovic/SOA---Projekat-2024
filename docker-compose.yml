@@ -27,6 +27,19 @@ services:
     depends_on:
       - database
 
+  blog-service:
+    build:
+      context: ./BlogService
+      dockerfile: Dockerfile
+    container_name: blog_service
+    restart: always
+    networks:
+      - servers
+    ports:
+      - 8084:8084
+    depends_on:
+      - database
+
   database:
     image: mysql
     container_name: mysql

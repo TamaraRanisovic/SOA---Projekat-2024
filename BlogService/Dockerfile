@@ -8,5 +8,5 @@ RUN go build -o blogservice
 
 FROM alpine
 COPY --from=build_container /app/blogservice /usr/bin
-EXPOSE 8082
+EXPOSE 8084
 ENTRYPOINT ["blogservice"]
