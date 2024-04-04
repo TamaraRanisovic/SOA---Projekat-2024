@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"database-example/dto"
-	"database-example/model"
-	"database-example/service"
+	"blogservice.com/dto"
+	"blogservice.com/model"
+	"blogservice.com/service"
 	"encoding/json"
 	"log"
 	"net/http"

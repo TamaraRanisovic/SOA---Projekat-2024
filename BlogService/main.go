@@ -71,12 +71,18 @@ func initDB() *gorm.DB {
 	return database
 }
 
-func startServer(handler *handler.BlogHandler) {
+func startServer(handler *handler.BlogHandler/*, commentHandler *handler.CommentHandler*/) {
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/blog/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/blogs", handler.GetAll).Methods("GET")
 	router.HandleFunc("/add-blog", handler.Create).Methods("POST")
+
+	/*router.HandleFunc("/comments", commentHandler.GetAll).Methods("GET")
+	router.HandleFunc("/commnets/{id}", commentHandler.Get).Methods("GET")
+	router.HandleFunc("/comments/add-comment", commentHandler.Create).Methods("POST")
+	router.HandleFunc("/comments/{id}/edit", commentHandler.UpdateComment).Methods("PUT")
+	router.HandleFunc("/comments/{id}/commenter-details", commentHandler.GetCommenterInfo).Methods("GET")*/
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
@@ -93,5 +99,9 @@ func main() {
 	service := &service.BlogService{BlogRepo: repo}
 	handler := &handler.BlogHandler{BlogService: service}
 
-	startServer(handler)
+	/*commentrepo := &repo.CommentRepository{DatabaseConnection: database}
+	commentservice := &service.CommentService{BlogRepo: commentrepo}
+	commenthandler := &handler.CommentHandler{BlogService: commentservice}*/
+
+	startServer(handler /*, commenthandler*/)
 }

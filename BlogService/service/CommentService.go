@@ -1,8 +1,10 @@
 package service
+
 import (
-	"database-example/model"
-	"database-example/repo"
 	"fmt"
+
+	"blogservice.com/model"
+	"blogservice.com/repo"
 )
 
 type CommentService struct {

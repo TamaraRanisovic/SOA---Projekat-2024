@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"database-example/model"
+	"blogservice.com/model"
 	"gorm.io/gorm"
 )
 
