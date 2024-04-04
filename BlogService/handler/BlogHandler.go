@@ -2,7 +2,9 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"time"
 
@@ -13,6 +15,15 @@ import (
 
 type BlogHandler struct {
 	BlogService *service.BlogService
+}
+
+// FormData represents the parsed form data
+type FormData struct {
+	Title       string
+	Description string
+	DateCreated string
+	Status      string
+	Pictures    []*multipart.FileHeader
 }
 
 // Function for getting blog by given id
@@ -100,81 +111,105 @@ func (handler *BlogHandler) Create(w http.ResponseWriter, r *http.Request) {
 // Function for creating a new blog
 func (handler *BlogHandler) Create(writer http.ResponseWriter, req *http.Request) {
 	// Parse form data
-	err := req.ParseMultipartForm(10 << 20)
+	formData, err := parseFormData(req)
 	if err != nil {
-		http.Error(writer, "Failed to parse form data", http.StatusInternalServerError)
+		handleError(writer, err, http.StatusInternalServerError)
 		return
 	}
-
-	// Extract form fields
-	title := req.Form.Get("title")
-	description := req.Form.Get("description")
-	dateCreatedStr := req.Form.Get("date_created")
-	statusStr := req.Form.Get("status")
-	pictures := req.MultipartForm.File["pictures"] // Get slice of picture files
 
 	// Validate form data
-	if title == "" || description == "" || dateCreatedStr == "" || statusStr == "" || len(pictures) == 0 {
-		http.Error(writer, "All fields are required", http.StatusBadRequest)
-		return
-	}
-
-	// Parse date created
-	dateCreated, err := time.Parse("2006-01-02", dateCreatedStr)
+	err = validateFormData(formData)
 	if err != nil {
-		http.Error(writer, "Invalid date format", http.StatusBadRequest)
-		return
-	}
-
-	// Parse status
-	var status model.Status
-	switch statusStr {
-	case "draft":
-		status = model.Draft
-	case "published":
-		status = model.Published
-	case "closed":
-		status = model.Closed
-	default:
-		http.Error(writer, "Invalid status", http.StatusBadRequest)
+		handleError(writer, err, http.StatusBadRequest)
 		return
 	}
 
 	// Create blog object
-	blog := model.Blog{
-		Title:       title,
-		Description: description,
-		DateCreated: dateCreated,
-		Status:      status,
+	blog, err := createBlog(formData)
+	if err != nil {
+		handleError(writer, err, http.StatusInternalServerError)
+		return
 	}
 
-	// Process each uploaded picture
-	for _, file := range pictures {
-		// Open uploaded file
-		uploadedFile, err := file.Open()
-		if err != nil {
-			http.Error(writer, "Failed to open uploaded file", http.StatusInternalServerError)
-			return
-		}
-		defer uploadedFile.Close()
-
-		// Perform operations with the file, such as saving it to disk or uploading to a cloud storage service
-		// For this example, we'll simply generate a URL representing the uploaded file
-		// This is just a placeholder; you'll need to replace it with your actual logic
-		pictureURL := file.Filename
-
-		// Append the picture URL to the blog
-		blog.Pictures = append(blog.Pictures, model.Picture{URL: pictureURL})
+	// Process uploaded pictures
+	err = uploadPictures(req, blog)
+	if err != nil {
+		handleError(writer, err, http.StatusInternalServerError)
+		return
 	}
 
 	// Create blog using service
-	err = handler.BlogService.Create(&blog)
+	err = handler.BlogService.Create(blog)
 	if err != nil {
-		http.Error(writer, "Failed to create blog", http.StatusInternalServerError)
+		handleError(writer, err, http.StatusInternalServerError)
 		return
 	}
 
 	// Return success response
 	writer.WriteHeader(http.StatusCreated)
 	writer.Header().Set("Content-Type", "application/json")
+}
+
+// Parse form data from the request
+func parseFormData(req *http.Request) (FormData, error) {
+	err := req.ParseMultipartForm(10 << 20)
+	if err != nil {
+		return FormData{}, errors.New("Failed to parse form data")
+	}
+
+	formData := FormData{
+		Title:       req.Form.Get("title"),
+		Description: req.Form.Get("description"),
+		DateCreated: req.Form.Get("date_created"),
+		Status:      req.Form.Get("status"),
+		Pictures:    req.MultipartForm.File["pictures"],
+	}
+
+	return formData, nil
+}
+
+// Validate form data
+func validateFormData(formData FormData) error {
+	if formData.Title == "" || formData.Description == "" || formData.DateCreated == "" || formData.Status == "" {
+		return errors.New("All fields are required")
+	}
+
+	return nil
+}
+
+// Create blog object
+func createBlog(formData FormData) (*model.Blog, error) {
+	dateCreated, err := time.Parse("2006-01-02", formData.DateCreated)
+	if err != nil {
+		return nil, errors.New("Invalid date format")
+	}
+
+	status, err := model.GetStatus(formData.Status)
+	if err != nil {
+		return nil, err // Return the error if status retrieval fails
+	}
+
+	blog := &model.Blog{
+		Title:       formData.Title,
+		Description: formData.Description,
+		DateCreated: dateCreated,
+		Status:      status,
+	}
+
+	return blog, nil
+}
+
+// Process uploaded pictures
+func uploadPictures(req *http.Request, blog *model.Blog) error {
+	for _, file := range req.MultipartForm.File["pictures"] {
+		pictureURL := file.Filename
+		blog.Pictures = append(blog.Pictures, model.Picture{URL: pictureURL})
+	}
+
+	return nil
+}
+
+// Handle HTTP errors
+func handleError(writer http.ResponseWriter, err error, status int) {
+	http.Error(writer, err.Error(), status)
 }
