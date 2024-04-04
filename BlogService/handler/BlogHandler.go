@@ -105,7 +105,7 @@ func (handler *BlogHandler) Create(writer http.ResponseWriter, req *http.Request
 		return
 	}
 	writer.Write([]byte(htmlContent))
-} //http.Redirect(writer, req, "/success.html", http.StatusSeeOther)
+}
 
 // Parse form data from the request
 func parseFormData(req *http.Request) (FormData, error) {
