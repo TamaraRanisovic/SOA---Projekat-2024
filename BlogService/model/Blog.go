@@ -13,6 +13,7 @@ type Blog struct {
 	Title       string    `json:"title" gorm:"not null;type:string"`
 	Description string    `json:"description" gorm:"not null;type:string"`
 	DateCreated time.Time `json:"date_created" gorm:"not null;type:timestamp"`
+	Status      Status    `json:"status" gorm:"not null;type:string"`
 	Pictures    []Picture `json:"pictures,omitempty" gorm:"foreignKey:BlogID;references:ID"`
 }
 

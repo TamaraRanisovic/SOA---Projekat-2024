@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create a Blog</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            margin-top: 50px;
+        }
+
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background-color: #7d3cff; /* Vibrant purple color */
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .btn-primary {
+            background-color: #7d3cff; /* Vibrant purple color */
+            border-color: #7d3cff; /* Vibrant purple color */
+        }
+
+        .btn-primary:hover {
+            background-color: #5b20ad; /* Slightly darker shade for hover */
+            border-color: #5b20ad; /* Slightly darker shade for hover */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h3>Create a Blog</h3>
+                    </div>
+                    <div class="card-body">
+                        <form action="/add-blog" method="post" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="title">Title</label>
+                                <input type="text" class="form-control" id="title" name="title" placeholder="Enter title">
+                            </div>
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <textarea class="form-control" rows="3" id="description" name="description" placeholder="Enter description"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="date_created">Date Created</label>
+                                <input type="date" class="form-control" id="date_created" name="date_created">
+                            </div>
+                            <div class="form-group">
+                                <label for="status">Status</label>
+                                <select class="form-control" id="status" name="status">
+                                    <option value="draft">Draft</option>
+                                    <option value="published">Published</option>
+                                    <option value="closed">Closed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="pictures">Add Photos</label>
+                                <input type="file" class="form-control-file" id="pictures" name="pictures" multiple>
+                                <small class="form-text text-muted">Hold down the Ctrl (windows) / Command (Mac) button to select multiple images.</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
