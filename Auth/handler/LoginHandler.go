@@ -5,6 +5,7 @@ import (
 	"database-example/dto"
 	"database-example/model"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -51,6 +52,7 @@ func (loginHandler *LoginHandler) Login(w http.ResponseWriter, r *http.Request) 
 	var creds dto.Credentials
 	err := json.NewDecoder(r.Body).Decode(&creds)
 	if err != nil {
+		log.Println("Failed to decode request body:", err)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Failed to decode request body\n"))
 		return
@@ -59,22 +61,30 @@ func (loginHandler *LoginHandler) Login(w http.ResponseWriter, r *http.Request) 
 	// Marshal the credentials into JSON
 	credsJSON, err := json.Marshal(creds)
 	if err != nil {
+		log.Println("Failed to marshal credentials:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Failed to marshal credentials\n"))
 		return
 	}
 
+	log.Println("Credentials:", creds)
+
 	// Make a POST request to User Management microservice to authenticate the user
-	getByUsernameAndPasswordURL := "http://user-management-service:8081/accounts/get"
+	getByUsernameAndPasswordURL := "http://localhost:8081/accounts/get"
 	resp, err := http.Post(getByUsernameAndPasswordURL, "application/json", bytes.NewBuffer(credsJSON))
 	if err != nil {
+		log.Println("Failed to make POST request to User Management microservice:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Failed to make POST request to User Management microservice\n"))
 		return
 	}
+	defer resp.Body.Close()
+
+	log.Println("Response status code:", resp.StatusCode)
 
 	// If the authentication fails, return Unauthorized status
 	if resp.StatusCode != http.StatusOK {
+		log.Println("Failed to authenticate user")
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("Failed to authenticate user\n"))
 		return
@@ -83,29 +93,36 @@ func (loginHandler *LoginHandler) Login(w http.ResponseWriter, r *http.Request) 
 	// Decode the account data from the response body
 	var account model.Account
 	if err := json.NewDecoder(resp.Body).Decode(&account); err != nil {
+		log.Println("Failed to decode account data:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Failed to decode account data\n"))
 		return
 	}
 
+	log.Println("Authenticated user:", account)
+
 	// Generate JWT token for the authenticated user
 	tokenString, err := createToken(creds.Username, account.Role)
 	if err != nil {
+		log.Println("Failed to generate token:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Failed to generate token\n"))
 		return
 	}
 
-	// Set the token in response headers
-	w.Header().Set("Authorization", "Bearer "+tokenString)
+	log.Println("Generated token:", tokenString)
+
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Authorization", "Bearer "+tokenString)
 	w.WriteHeader(http.StatusOK)
 
-	// Return success message and token
-	w.Write([]byte("You've successfully logged in!\n"))
-	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
+	json.NewEncoder(w).Encode(map[string]string{"message": "You've successfully logged in!", "token": tokenString})
 
-	defer resp.Body.Close()
+	// Set the token in response headers
+	/*w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	*/
+	// Return success message and token
 
 }
 

@@ -133,6 +133,10 @@ func parseTourFormData(req *http.Request) (TourFormData, error) {
 }
 
 func (p *TourHandler) AddTourHandler(w http.ResponseWriter, r *http.Request) {
+	/*if userRole != RoleGuide {
+		return errors.New("unauthorized: only guides can perform this action")
+	}
+	*/
 	tourFormData, err := parseTourFormData(r)
 	if err != nil {
 		handleError(w, err, http.StatusBadRequest)

@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"bytes"
 	"database-example/dto"
 	"database-example/model"
 	"database-example/service"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 
@@ -51,6 +53,78 @@ func authenticate(writer http.ResponseWriter, req *http.Request) {
 		writer.Write([]byte("Access denied\n"))
 		return
 	}
+}
+
+func (handler *AccountHandler) AuthenticateGuide(w http.ResponseWriter, req *http.Request) {
+	var role model.Role = 1
+
+	var tokenBody struct {
+		Token string `json:"token"`
+	}
+
+	tokenString := req.Header.Get("Authorization")
+	log.Println(tokenString)
+
+	if tokenString == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("No token provided\n"))
+		return
+	}
+	tokenBody.Token = tokenString
+
+	tokenBodyJSON, err := json.Marshal(tokenBody)
+	if err != nil {
+		log.Println("Failed to marshal tokenBody:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to marshal tokenBody\n"))
+		return
+	}
+
+	decodeToken := "http://localhost:8082/decode"
+	resp, err := http.Post(decodeToken, "application/json", bytes.NewBuffer(tokenBodyJSON))
+	if err != nil {
+		log.Println("Failed to make POST request to Auth microservice:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to make POST request to Auth microservice\n"))
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Response body:", string(body))
+		log.Println("Failed to read response body:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to read response body\n"))
+		return
+	}
+
+	// Log the response body
+	log.Println("Response body:", string(body))
+
+	// Decode the JSON response body to extract the username, role, and expiration
+	var responseBody struct {
+		Username   string     `json:"username"`
+		Role       model.Role `json:"role"`
+		Expiration int64      `json:"exp"`
+	}
+	if err := json.Unmarshal(body, &responseBody); err != nil {
+		log.Println("Failed to decode response body:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to decode response body\n"))
+		return
+	}
+
+	// Check if the user's role is Guide
+	if responseBody.Role != role {
+		log.Println("Access denied: user's role is not Guide")
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("Access denied\n"))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+
 }
 
 // Function for getting Account by given id

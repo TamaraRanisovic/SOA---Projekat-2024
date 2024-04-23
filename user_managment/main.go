@@ -14,7 +14,7 @@ import (
 )
 
 func initDB() *gorm.DB {
-	connectionStr := "root:root@tcp(database:3306)/students?charset=utf8mb4&parseTime=True&loc=Local"
+	connectionStr := "root:root@tcp(localhost:3306)/students?charset=utf8mb4&parseTime=True&loc=Local"
 	database, err := gorm.Open(mysql.Open(connectionStr), &gorm.Config{})
 	if err != nil {
 		print(err)
@@ -68,6 +68,7 @@ func startServer(handler *handler.AccountHandler) {
 	router.HandleFunc("/admin/all-accounts/{id}/", handler.Get).Methods("GET")
 	router.HandleFunc("/admin/block/{id}/", handler.Block).Methods("PUT")
 	router.HandleFunc("/add-account/", handler.Create).Methods("POST")
+	router.HandleFunc("/authenticate-guide/", handler.AuthenticateGuide).Methods("POST")
 
 	router.HandleFunc("/accounts/get", handler.GetByUsernameAndPassword).Methods("POST")
 
