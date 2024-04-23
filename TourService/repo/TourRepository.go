@@ -106,24 +106,38 @@ func (pr *TourRepository) GetById(id string) (*model.Tour, error) {
 	return &tour, nil
 }
 
+func (pr *TourRepository) GetByName(name string) (model.Tours, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	toursCollection := pr.getCollection()
+
+	var tours model.Tours
+	toursCursor, err := toursCollection.Find(ctx, bson.M{"name": name})
+	if err != nil {
+		pr.logger.Println(err)
+		return nil, err
+	}
+	if err = toursCursor.All(ctx, &tours); err != nil {
+		pr.logger.Println(err)
+		return nil, err
+	}
+	return tours, nil
+}
+
 /*
-	func (pr *TourRepository) GetByName(name string) (Patients, error) {
+	func (pr *TourRepository) Insert(tour *model.Tour) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
+		toursCollection := pr.getCollection()
 
-		patientsCollection := pr.getCollection()
-
-		var patients Patients
-		patientsCursor, err := patientsCollection.Find(ctx, bson.M{"name": name})
+		result, err := toursCollection.InsertOne(ctx, &tour)
 		if err != nil {
 			pr.logger.Println(err)
-			return nil, err
+			return err
 		}
-		if err = patientsCursor.All(ctx, &patients); err != nil {
-			pr.logger.Println(err)
-			return nil, err
-		}
-		return patients, nil
+		pr.logger.Printf("Documents ID: %v\n", result.InsertedID)
+		return nil
 	}
 */
 func (pr *TourRepository) Insert(tour *model.Tour) error {
@@ -136,7 +150,7 @@ func (pr *TourRepository) Insert(tour *model.Tour) error {
 		pr.logger.Println(err)
 		return err
 	}
-	pr.logger.Printf("Documents ID: %v\n", result.InsertedID)
+	pr.logger.Printf("Document ID: %v\n", result.InsertedID)
 	return nil
 }
 

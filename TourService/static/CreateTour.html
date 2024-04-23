@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport">
+    <meta http-equiv="Content-Type" content="text/html">
+    <title>Create a Tour</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            margin-top: 50px;
+        }
+
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background-color: #7d3cff; /* Vibrant purple color */
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .btn-primary {
+            background-color: #7d3cff; /* Vibrant purple color */
+            border-color: #7d3cff; /* Vibrant purple color */
+        }
+
+        .btn-primary:hover {
+            background-color: #5b20ad; /* Slightly darker shade for hover */
+            border-color: #5b20ad; /* Slightly darker shade for hover */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h3>Create a Tour5</h3>
+                    </div>
+                    <div class="card-body">
+                        <form action="/tours/add" method="post" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="name">Name</label>
+                                <input type="text" class="form-control" id="name" name="name" placeholder="Enter name">
+                            </div>
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <textarea class="form-control" rows="6" id="description" name="description" placeholder="Enter description"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="length">Length (in km)</label>
+                                <input type="number" class="form-control" id="length" name="length" placeholder="Enter length">
+                            </div>
+                            <div class="form-group">
+                                <label for="tags">Tags</label>
+                                <input type="text" class="form-control" id="tags" name="tags" placeholder="Enter tags separated by commas">
+                            </div>
+                            <div class="form-group">
+                                <label for="difficulty">Difficulty</label>
+                                <select class="form-control" id="difficulty" name="difficulty">
+                                    <option value="1">1 (Easy)</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5 (Medium)</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10 (Difficult)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="price">Price</label>
+                                <input type="number" class="form-control" id="price" name="price" placeholder="Enter price">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Submit</button>
+                            <button type="button" class="btn btn-secondary btn-block" onclick="window.location.href='/';">Cancel</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

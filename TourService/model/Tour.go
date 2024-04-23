@@ -11,8 +11,9 @@ type Tour struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Name        string             `bson:"name" json:"name"`
 	Description string             `bson:"description,omitempty" json:"description"`
+	Length      float64            `bson:"length,omitempty" json:"length"`
 	Tags        []string           `bson:"tags,omitempty" json:"tags"`
-	Difficulty  string             `bson:"difficulty,omitempty" json:"difficulty"`
+	Difficulty  int                `bson:"difficulty,omitempty" json:"difficulty"`
 	Price       float64            `bson:"price,omitempty" json:"price"`
 }
 

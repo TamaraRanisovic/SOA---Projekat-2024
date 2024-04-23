@@ -3,7 +3,6 @@ package main
 import (
 	handlers "Rest/handler"
 	"Rest/repo"
-
 	"context"
 	"log"
 	"net/http"
@@ -46,14 +45,14 @@ func main() {
 
 	//Initialize the router and add a middleware for all the requests
 	router := mux.NewRouter()
-	router.Use(tourHandler.MiddlewareContentTypeSet)
+	//router.Use(tourHandler.MiddlewareContentTypeSet)
 
 	getRouter := router.Methods(http.MethodGet).Subrouter()
 	getRouter.HandleFunc("/tours", tourHandler.GetAllTours)
 
 	postRouter := router.Methods(http.MethodPost).Subrouter()
-	postRouter.HandleFunc("/tours/add", tourHandler.PostTour)
-	postRouter.Use(tourHandler.MiddlewareTourDeserialization)
+	postRouter.HandleFunc("/tours/add", tourHandler.AddTourHandler)
+	//postRouter.Use(tourHandler.MiddlewareTourDeserialization)
 
 	/*getByNameRouter := router.Methods(http.MethodGet).Subrouter()
 	getByNameRouter.HandleFunc("/filter", tourHandler.GetPatientsByName)
@@ -88,6 +87,7 @@ func main() {
 
 	deleteRouter := router.Methods(http.MethodDelete).Subrouter()
 	deleteRouter.HandleFunc("/{id}", tourHandler.DeletePatient)*/
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir("/app/static")))
 
 	cors := gorillaHandlers.CORS(gorillaHandlers.AllowedOrigins([]string{"*"}))
 

@@ -3,10 +3,15 @@ package handlers
 import (
 	"Rest/model"
 	"Rest/repo"
+	"errors"
+	"fmt"
+	"os"
+	"strings"
 
 	"context"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -86,13 +91,136 @@ func (p *TourHandler) GetTourById(rw http.ResponseWriter, h *http.Request) {
 		}
 	}
 */
-func (p *TourHandler) PostTour(rw http.ResponseWriter, h *http.Request) {
-	tour := h.Context().Value(KeyProduct{}).(*model.Tour)
-	p.repo.Insert(tour)
-	rw.WriteHeader(http.StatusCreated)
+
+type TourFormData struct {
+	Name        string
+	Description string
+	Length      float64
+	Tags        []string
+	Difficulty  int
+	Price       float64
 }
 
+func parseTourFormData(req *http.Request) (TourFormData, error) {
+	err := req.ParseMultipartForm(10 << 20)
+	if err != nil {
+		return TourFormData{}, errors.New("failed to parse form data")
+	}
+
+	name := req.Form.Get("name")
+	if name == "" {
+		return TourFormData{}, errors.New("name is a required field")
+	}
+
+	length, _ := strconv.ParseFloat(req.Form.Get("length"), 64)
+
+	price, _ := strconv.ParseFloat(req.Form.Get("price"), 64)
+
+	difficulty, _ := strconv.Atoi(req.Form.Get("difficulty"))
+
+	tags := strings.Split(req.Form.Get("tags"), ",")
+
+	tourFormData := TourFormData{
+		Name:        req.Form.Get("name"),
+		Description: req.Form.Get("description"),
+		Length:      length,
+		Tags:        tags,
+		Difficulty:  difficulty,
+		Price:       price,
+	}
+
+	return tourFormData, nil
+}
+
+func (p *TourHandler) AddTourHandler(w http.ResponseWriter, r *http.Request) {
+	tourFormData, err := parseTourFormData(r)
+	if err != nil {
+		handleError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	tour := model.Tour{
+		Name:        tourFormData.Name,
+		Description: tourFormData.Description,
+		Length:      tourFormData.Length,
+		Tags:        tourFormData.Tags,
+		Difficulty:  tourFormData.Difficulty,
+		Price:       tourFormData.Price,
+	}
+
+	err = p.repo.Insert(&tour)
+	if err != nil {
+		handleError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html") // Set content type before writing response
+	w.WriteHeader(http.StatusOK)
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Failed to get current working directory: %v", err)
+	}
+	log.Printf("Current working directory: %s", cwd)
+
+	htmlContent, err := os.ReadFile("/app/static/html/success.html")
+	if err != nil {
+		handleError(w, fmt.Errorf("failed to read HTML file: %v", err), http.StatusInternalServerError)
+		return
+	}
+	w.Write([]byte(htmlContent))
+}
+
+/*func (p *TourHandler) AddTourHandler(w http.ResponseWriter, r *http.Request) {
+	tourFormData, err := parseTourFormData(r)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	tour := model.Tour{
+		Name:        tourFormData.Name,
+		Description: tourFormData.Description,
+		Length:      tourFormData.Length,
+		Tags:        tourFormData.Tags,
+		Difficulty:  tourFormData.Difficulty,
+		Price:       tourFormData.Price,
+	}
+
+	//p.repo.Insert(&tour)
+
+	err = p.repo.Insert(&tour)
+	if err != nil {
+		handleError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Tour created successfully"})
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+
+	htmlContent, err := os.ReadFile("html/success.html")
+	if err != nil {
+		handleError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.Write([]byte(htmlContent))
+}
+*/
+
 /*
+	func (p *TourHandler) PostTour(rw http.ResponseWriter, h *http.Request) {
+		tour := h.Context().Value(KeyProduct{}).(*model.Tour)
+		p.repo.Insert(tour)
+		rw.WriteHeader(http.StatusCreated)
+	}
+
+/*
+
 	func (p *PatientsHandler) PatchPatient(rw http.ResponseWriter, h *http.Request) {
 		vars := mux.Vars(h)
 		id := vars["id"]
@@ -266,7 +394,7 @@ func (p *TourHandler) MiddlewareTourDeserialization(next http.Handler) http.Hand
 			next.ServeHTTP(rw, h)
 		})
 	}
-*/
+
 func (p *TourHandler) MiddlewareContentTypeSet(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, h *http.Request) {
 		p.logger.Println("Method [", h.Method, "] - Hit path :", h.URL.Path)
@@ -275,4 +403,9 @@ func (p *TourHandler) MiddlewareContentTypeSet(next http.Handler) http.Handler {
 
 		next.ServeHTTP(rw, h)
 	})
+}
+*/
+// Handle HTTP errors
+func handleError(writer http.ResponseWriter, err error, status int) {
+	http.Error(writer, err.Error(), status)
 }
