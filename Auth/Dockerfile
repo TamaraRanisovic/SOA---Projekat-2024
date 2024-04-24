@@ -8,5 +8,6 @@ RUN go build -o authservice
 
 FROM alpine
 COPY --from=build_container /app/authservice /usr/bin
+COPY --from=build_container /app/static /app/static
 EXPOSE 8082
 ENTRYPOINT ["authservice"]

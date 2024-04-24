@@ -73,7 +73,7 @@ func startServer(handler *handler.AccountHandler) {
 	router.HandleFunc("/accounts/get", handler.GetByUsernameAndPassword).Methods("POST")
 	//cors := gorillaHandlers.CORS(gorillaHandlers.AllowedOrigins([]string{"*"}))
 
-	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir("/app/static")))
 	println("Server starting")
 	log.Fatal(http.ListenAndServe(":8085", router))
 }

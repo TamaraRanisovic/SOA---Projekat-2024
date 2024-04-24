@@ -78,7 +78,8 @@ func startServer(handler *handler.BlogHandler) {
 	router.HandleFunc("/blogs", handler.GetAll).Methods("GET")
 	router.HandleFunc("/add-blog", handler.Create).Methods("POST")
 
-	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir("/app/static")))
+
 	println("Server starting")
 	log.Fatal(http.ListenAndServe(":8084", router))
 }

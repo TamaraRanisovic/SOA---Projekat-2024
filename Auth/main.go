@@ -32,7 +32,7 @@ func startServer(loginHandler *handler.LoginHandler) {
 
 	cors := gorillaHandlers.CORS(gorillaHandlers.AllowedOrigins([]string{"*"}))
 
-	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir("/app/static")))
 	println("Server starting")
 
 	// Start the HTTP server on port 8082

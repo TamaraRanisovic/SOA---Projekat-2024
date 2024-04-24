@@ -59,7 +59,7 @@ services:
     networks:
       - servers
     ports:
-      - 8083:8083
+      - 8083:8080
 
 volumes:
   database-data:

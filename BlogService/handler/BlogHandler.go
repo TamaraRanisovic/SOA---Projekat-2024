@@ -99,7 +99,7 @@ func (handler *BlogHandler) Create(writer http.ResponseWriter, req *http.Request
 	writer.Header().Set("Content-Type", "text/html")
 	writer.WriteHeader(http.StatusOK)
 
-	htmlContent, err := os.ReadFile("html/success.html")
+	htmlContent, err := os.ReadFile("/app/static/html/success.html")
 	if err != nil {
 		handleError(writer, err, http.StatusInternalServerError)
 		return
