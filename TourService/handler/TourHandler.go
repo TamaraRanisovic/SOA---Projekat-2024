@@ -159,17 +159,7 @@ func (p *TourHandler) AddTourHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decodeURL := "http://database-example:8082/decode"
-	_, err2 := http.Post(decodeURL, "application/json", bytes.NewBuffer(tokenBodyJSON))
-
-	if err2 != nil {
-		log.Println("Failed to make GET request to auth  microservice:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to make GET request to auth microservice\n"))
-		return
-	}
-
-	authenticateGuideURL := "http://database-example:8085/authenticate-guide/"
+	authenticateGuideURL := "http://user_management_service:8085/authenticate-guide/"
 	resp, err := http.Post(authenticateGuideURL, "application/json", bytes.NewBuffer(tokenBodyJSON))
 
 	if err != nil {
