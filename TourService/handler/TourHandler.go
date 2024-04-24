@@ -3,6 +3,8 @@ package handlers
 import (
 	"Rest/model"
 	"Rest/repo"
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -133,46 +135,92 @@ func parseTourFormData(req *http.Request) (TourFormData, error) {
 }
 
 func (p *TourHandler) AddTourHandler(w http.ResponseWriter, r *http.Request) {
-	/*if userRole != RoleGuide {
-		return errors.New("unauthorized: only guides can perform this action")
+	// Make a POST request to User Management microservice to authenticate the user
+
+	var tokenBody struct {
+		Token string `json:"token"`
 	}
-	*/
-	tourFormData, err := parseTourFormData(r)
+
+	tokenString := r.Header.Get("Authorization")
+	log.Println(tokenString)
+
+	if tokenString == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("No token provided\n"))
+		return
+	}
+	tokenBody.Token = tokenString
+
+	tokenBodyJSON, err := json.Marshal(tokenBody)
 	if err != nil {
-		handleError(w, err, http.StatusBadRequest)
+		log.Println("Failed to marshal tokenBody:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to marshal tokenBody\n"))
 		return
 	}
 
-	tour := model.Tour{
-		Name:        tourFormData.Name,
-		Description: tourFormData.Description,
-		Length:      tourFormData.Length,
-		Tags:        tourFormData.Tags,
-		Difficulty:  tourFormData.Difficulty,
-		Price:       tourFormData.Price,
-	}
+	decodeURL := "http://database-example:8082/decode"
+	_, err2 := http.Post(decodeURL, "application/json", bytes.NewBuffer(tokenBodyJSON))
 
-	err = p.repo.Insert(&tour)
-	if err != nil {
-		handleError(w, err, http.StatusInternalServerError)
+	if err2 != nil {
+		log.Println("Failed to make GET request to auth  microservice:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to make GET request to auth microservice\n"))
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html") // Set content type before writing response
-	w.WriteHeader(http.StatusOK)
+	authenticateGuideURL := "http://database-example:8085/authenticate-guide/"
+	resp, err := http.Post(authenticateGuideURL, "application/json", bytes.NewBuffer(tokenBodyJSON))
 
-	cwd, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("Failed to get current working directory: %v", err)
-	}
-	log.Printf("Current working directory: %s", cwd)
-
-	htmlContent, err := os.ReadFile("/app/static/html/success.html")
-	if err != nil {
-		handleError(w, fmt.Errorf("failed to read HTML file: %v", err), http.StatusInternalServerError)
+		log.Println("Failed to make GET request to User Management microservice:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to make GET request to User Management microservice\n"))
 		return
 	}
-	w.Write([]byte(htmlContent))
+
+	if resp.StatusCode == http.StatusOK {
+		tourFormData, err := parseTourFormData(r)
+		if err != nil {
+			handleError(w, err, http.StatusBadRequest)
+			return
+		}
+
+		tour := model.Tour{
+			Name:        tourFormData.Name,
+			Description: tourFormData.Description,
+			Length:      tourFormData.Length,
+			Tags:        tourFormData.Tags,
+			Difficulty:  tourFormData.Difficulty,
+			Price:       tourFormData.Price,
+		}
+
+		err = p.repo.Insert(&tour)
+		if err != nil {
+			handleError(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html") // Set content type before writing response
+		w.WriteHeader(http.StatusOK)
+
+		cwd, err := os.Getwd()
+		if err != nil {
+			log.Fatalf("Failed to get current working directory: %v", err)
+		}
+		log.Printf("Current working directory: %s", cwd)
+
+		htmlContent, err := os.ReadFile("/app/static/html/success.html")
+		if err != nil {
+			handleError(w, fmt.Errorf("failed to read HTML file: %v", err), http.StatusInternalServerError)
+			return
+		}
+		w.Write([]byte(htmlContent))
+	} else {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("unauthorized: only guides can perform this action\n"))
+		return
+	}
 }
 
 /*func (p *TourHandler) AddTourHandler(w http.ResponseWriter, r *http.Request) {

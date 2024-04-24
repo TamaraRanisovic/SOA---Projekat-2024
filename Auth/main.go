@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -29,11 +30,13 @@ func startServer(loginHandler *handler.LoginHandler) {
 	router.HandleFunc("/login", loginHandler.Login).Methods("POST")
 	router.HandleFunc("/decode", loginHandler.DecodeToken).Methods("POST")
 
+	cors := gorillaHandlers.CORS(gorillaHandlers.AllowedOrigins([]string{"*"}))
+
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
 
 	// Start the HTTP server on port 8082
-	log.Fatal(http.ListenAndServe(":8082", router))
+	log.Fatal(http.ListenAndServe(":8082", cors(router)))
 }
 
 func main() {

@@ -56,22 +56,23 @@ func authenticate(writer http.ResponseWriter, req *http.Request) {
 }
 
 func (handler *AccountHandler) AuthenticateGuide(w http.ResponseWriter, req *http.Request) {
-	var role model.Role = 1
-
+	// Decode the JSON request body into tokenBody struct
 	var tokenBody struct {
 		Token string `json:"token"`
 	}
 
-	tokenString := req.Header.Get("Authorization")
-	log.Println(tokenString)
-
-	if tokenString == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("No token provided\n"))
+	err := json.NewDecoder(req.Body).Decode(&tokenBody)
+	if err != nil {
+		log.Println("Failed to decode tokenBody:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to decode tokenBody\n"))
 		return
 	}
-	tokenBody.Token = tokenString
 
+	// Log the tokenBody
+	log.Println("Request body:", tokenBody)
+
+	// Encode tokenBody to JSON
 	tokenBodyJSON, err := json.Marshal(tokenBody)
 	if err != nil {
 		log.Println("Failed to marshal tokenBody:", err)
@@ -80,7 +81,7 @@ func (handler *AccountHandler) AuthenticateGuide(w http.ResponseWriter, req *htt
 		return
 	}
 
-	decodeToken := "http://localhost:8082/decode"
+	decodeToken := "http://localhost:8082/decode" // Change this to the actual decode endpoint
 	resp, err := http.Post(decodeToken, "application/json", bytes.NewBuffer(tokenBodyJSON))
 	if err != nil {
 		log.Println("Failed to make POST request to Auth microservice:", err)
@@ -93,7 +94,6 @@ func (handler *AccountHandler) AuthenticateGuide(w http.ResponseWriter, req *htt
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Response body:", string(body))
 		log.Println("Failed to read response body:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Failed to read response body\n"))
@@ -103,28 +103,15 @@ func (handler *AccountHandler) AuthenticateGuide(w http.ResponseWriter, req *htt
 	// Log the response body
 	log.Println("Response body:", string(body))
 
-	// Decode the JSON response body to extract the username, role, and expiration
-	var responseBody struct {
-		Username   string     `json:"username"`
-		Role       model.Role `json:"role"`
-		Expiration int64      `json:"exp"`
-	}
-	if err := json.Unmarshal(body, &responseBody); err != nil {
-		log.Println("Failed to decode response body:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to decode response body\n"))
+	// Check if the response indicates a successful decode
+	if resp.StatusCode != http.StatusOK {
+		log.Println("Failed to decode token:", string(body))
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Failed to decode token\n"))
 		return
 	}
 
-	// Check if the user's role is Guide
-	if responseBody.Role != role {
-		log.Println("Access denied: user's role is not Guide")
-		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte("Access denied\n"))
-		return
-	}
 	w.WriteHeader(http.StatusOK)
-
 }
 
 // Function for getting Account by given id

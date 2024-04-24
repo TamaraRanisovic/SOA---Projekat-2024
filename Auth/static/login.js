@@ -23,7 +23,7 @@ document.getElementById("loginForm").addEventListener("submit", function(event) 
         // Store JWT token in localStorage
         localStorage.setItem("jwtToken", data.token);
         // Redirect to dashboard or another page
-        window.location.href = "/login.html"; // Change this to the desired URL
+        window.location.href = "http://localhost:8080/homepage.html"; // Change this to the desired URL
     })
     .catch(error => {
         document.getElementById("message").textContent = "Failed to login";

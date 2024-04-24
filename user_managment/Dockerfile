@@ -8,5 +8,5 @@ RUN go build -o usermanagementservice
 
 FROM alpine
 COPY --from=build_container /app/usermanagementservice /usr/bin
-EXPOSE 8081
+EXPOSE 8085
 ENTRYPOINT ["usermanagementservice"]

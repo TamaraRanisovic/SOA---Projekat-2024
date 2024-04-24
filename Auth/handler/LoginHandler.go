@@ -15,6 +15,16 @@ import (
 type LoginHandler struct {
 }
 
+/*
+var store *sessions.CookieStore
+
+func init() {
+	// Replace "your-secret-key" with a strong random key for session encryption
+	store = sessions.NewCookieStore([]byte("your-secret-key"))
+	store.Options = &sessions.Options{}
+	store.MaxAge(store.Options.MaxAge)
+}
+*/
 // Secret key used for JWT token signing
 var jwtKey = []byte("my_secret_key")
 
@@ -70,7 +80,7 @@ func (loginHandler *LoginHandler) Login(w http.ResponseWriter, r *http.Request) 
 	log.Println("Credentials:", creds)
 
 	// Make a POST request to User Management microservice to authenticate the user
-	getByUsernameAndPasswordURL := "http://localhost:8081/accounts/get"
+	getByUsernameAndPasswordURL := "http://localhost:8085/accounts/get"
 	resp, err := http.Post(getByUsernameAndPasswordURL, "application/json", bytes.NewBuffer(credsJSON))
 	if err != nil {
 		log.Println("Failed to make POST request to User Management microservice:", err)
