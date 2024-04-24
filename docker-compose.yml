@@ -10,7 +10,7 @@ services:
     networks:
       - servers
     ports:
-      - 8081:8081
+      - 8085:8085
     depends_on:
       - database
 
@@ -27,6 +27,18 @@ services:
     depends_on:
       - database
 
+  blog-service:
+    build:
+      context: ./BlogService
+      dockerfile: Dockerfile
+    container_name: blog_service
+    restart: always
+    networks:
+      - servers
+    ports:
+      - 8084:8084
+    depends_on:
+      - database
 
   database:
     image: mysql
@@ -47,7 +59,7 @@ services:
     networks:
       - servers
     ports:
-      - 8083:8080
+      - 8083:8083
 
 volumes:
   database-data:

@@ -81,7 +81,7 @@ func (handler *AccountHandler) AuthenticateGuide(w http.ResponseWriter, req *htt
 		return
 	}
 
-	decodeToken := "http://localhost:8082/decode" // Change this to the actual decode endpoint
+	decodeToken := "http://database:8082/decode" // Change this to the actual decode endpoint
 	resp, err := http.Post(decodeToken, "application/json", bytes.NewBuffer(tokenBodyJSON))
 	if err != nil {
 		log.Println("Failed to make POST request to Auth microservice:", err)
