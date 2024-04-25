@@ -50,7 +50,7 @@
                         <h3>Create a Tour5</h3>
                     </div>
                     <div class="card-body">
-                        <form action="/tours/add" method="post" enctype="multipart/form-data">
+                        <form id="tourForm" action="/tours/add" method="post" enctype="multipart/form-data">
                             <div class="form-group">
                                 <label for="name">Name</label>
                                 <input type="text" class="form-control" id="name" name="name" placeholder="Enter name">
@@ -86,7 +86,9 @@
                                 <label for="price">Price</label>
                                 <input type="number" class="form-control" id="price" name="price" placeholder="Enter price">
                             </div>
-                            <button type="submit" class="btn btn-primary btn-block">Submit</button>
+                            <!-- Hidden input field to store JWT token -->
+                            <input type="hidden" id="token" name="token">
+                            <button id="submitButton" type="button" class="btn btn-primary btn-block">Submit</button>
                             <button type="button" class="btn btn-secondary btn-block" onclick="window.location.href='/';">Cancel</button>
                         </form>
                     </div>
@@ -94,6 +96,26 @@
             </div>
         </div>
     </div>
+    <!-- JavaScript to retrieve JWT token and submit form with token included -->
+    <script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Retrieve JWT token from local storage
+    const token = localStorage.getItem('jwtToken');
+
+    // Set the value of the hidden input field with the JWT token
+    document.getElementById('token').value = token;
+
+    // Add event listener to the form submission
+    document.getElementById('submitButton').addEventListener('click', function (event) {
+        // Prevent the default form submission behavior
+        event.preventDefault();
+
+        // Submit the form
+        document.getElementById('tourForm').submit();
+    });
+});
+
+    </script>
 </body>
 
 </html>

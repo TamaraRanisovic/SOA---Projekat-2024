@@ -101,6 +101,7 @@ type TourFormData struct {
 	Tags        []string
 	Difficulty  int
 	Price       float64
+	Token       string
 }
 
 func parseTourFormData(req *http.Request) (TourFormData, error) {
@@ -122,6 +123,8 @@ func parseTourFormData(req *http.Request) (TourFormData, error) {
 
 	tags := strings.Split(req.Form.Get("tags"), ",")
 
+	token := req.Form.Get("token")
+
 	tourFormData := TourFormData{
 		Name:        req.Form.Get("name"),
 		Description: req.Form.Get("description"),
@@ -129,27 +132,27 @@ func parseTourFormData(req *http.Request) (TourFormData, error) {
 		Tags:        tags,
 		Difficulty:  difficulty,
 		Price:       price,
+		Token:       token,
 	}
 
 	return tourFormData, nil
 }
 
 func (p *TourHandler) AddTourHandler(w http.ResponseWriter, r *http.Request) {
-	// Make a POST request to User Management microservice to authenticate the user
+
+	tourFormData, err := parseTourFormData(r)
 
 	var tokenBody struct {
 		Token string `json:"token"`
 	}
 
-	tokenString := r.Header.Get("Authorization")
-	log.Println(tokenString)
-
-	if tokenString == "" {
+	if tourFormData.Token == "" {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("No token provided\n"))
 		return
 	}
-	tokenBody.Token = tokenString
+
+	tokenBody.Token = tourFormData.Token
 
 	tokenBodyJSON, err := json.Marshal(tokenBody)
 	if err != nil {
@@ -160,21 +163,17 @@ func (p *TourHandler) AddTourHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	authenticateGuideURL := "http://user_management_service:8085/authenticate-guide/"
-	resp, err := http.Post(authenticateGuideURL, "application/json", bytes.NewBuffer(tokenBodyJSON))
-
+	resp, err := http.Post(authenticateGuideURL, "application/json", bytes.NewBuffer([]byte(tokenBodyJSON)))
 	if err != nil {
-		log.Println("Failed to make GET request to User Management microservice:", err)
+		log.Println("Failed to make POST request to User Management microservice:", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to make GET request to User Management microservice\n"))
+		w.Write([]byte("Failed to authenticate user\n"))
 		return
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode == http.StatusOK {
-		tourFormData, err := parseTourFormData(r)
-		if err != nil {
-			handleError(w, err, http.StatusBadRequest)
-			return
-		}
 
 		tour := model.Tour{
 			Name:        tourFormData.Name,
@@ -191,25 +190,19 @@ func (p *TourHandler) AddTourHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Respond with success HTML
 		w.Header().Set("Content-Type", "text/html") // Set content type before writing response
 		w.WriteHeader(http.StatusOK)
-
-		cwd, err := os.Getwd()
-		if err != nil {
-			log.Fatalf("Failed to get current working directory: %v", err)
-		}
-		log.Printf("Current working directory: %s", cwd)
 
 		htmlContent, err := os.ReadFile("/app/static/html/success.html")
 		if err != nil {
 			handleError(w, fmt.Errorf("failed to read HTML file: %v", err), http.StatusInternalServerError)
 			return
 		}
-		w.Write([]byte(htmlContent))
+		w.Write(htmlContent)
 	} else {
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte("unauthorized: only guides can perform this action\n"))
-		return
+		w.Write([]byte("Unauthorized: only guides can perform this action\n"))
 	}
 }
 
