@@ -57,6 +57,8 @@ func authenticate(writer http.ResponseWriter, req *http.Request) {
 
 func (handler *AccountHandler) AuthenticateGuide(w http.ResponseWriter, req *http.Request) {
 	// Decode the JSON request body into tokenBody struct
+	var role model.Role = 1
+
 	var tokenBody struct {
 		Token string `json:"token"`
 	}
@@ -81,6 +83,7 @@ func (handler *AccountHandler) AuthenticateGuide(w http.ResponseWriter, req *htt
 		return
 	}
 
+	// Make a POST request to the Auth microservice to decode the token
 	decodeToken := "http://auth-service:8082/decode" // Change this to the actual decode endpoint
 	resp, err := http.Post(decodeToken, "application/json", bytes.NewBuffer(tokenBodyJSON))
 	if err != nil {
@@ -108,6 +111,28 @@ func (handler *AccountHandler) AuthenticateGuide(w http.ResponseWriter, req *htt
 		log.Println("Failed to decode token:", string(body))
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("Failed to decode token\n"))
+		return
+	}
+
+	// Decode the response body into bodyJSON struct
+	var bodyJSON struct {
+		Username string     `json:"username"`
+		Role     model.Role `json:"role"`
+		Exp      int64      `json:"exp"`
+	}
+
+	err = json.Unmarshal(body, &bodyJSON)
+	if err != nil {
+		log.Println("Failed to decode response body:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to decode response body\n"))
+		return
+	}
+
+	// Check if the token is valid and the user's role allows access
+	if bodyJSON.Role != role {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("Access denied\n"))
 		return
 	}
 
