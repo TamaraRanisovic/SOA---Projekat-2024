@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Fetching</title>
+</head>
+<body>
+    <button onclick="fetchData()">Fetch Data</button>
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Length</th>
+                <th>Tags</th>
+                <th>Difficulty</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody id="dataBody">
+            <!-- Data will be populated here -->
+        </tbody>
+    </table>
+
+    <script>
+        function fetchData() {
+            console.log('Fetching data...');
+
+            // Retrieve JWT token from localStorage
+            const token = localStorage.getItem('jwtToken');
+
+            // Your API endpoint to fetch data
+            const apiUrl = 'http://localhost:8086/tours/user';
+
+            fetch(apiUrl, {
+                method: 'POST', // Changed to POST
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ token: token })
+            })
+            .then(response => {
+                console.log('Response received:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data received:', data);
+                const tableBody = document.getElementById('dataBody');
+                tableBody.innerHTML = ''; // Clear previous data
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.name}</td>
+                        <td>${item.description}</td>
+                        <td>${item.length}</td>
+                        <td>${item.tags}</td>
+                        <td>${item.difficulty}</td>
+                        <td>${item.price}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+        }
+    </script>
+</body>
+</html>

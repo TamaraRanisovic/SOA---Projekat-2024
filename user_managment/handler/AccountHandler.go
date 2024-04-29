@@ -139,6 +139,98 @@ func (handler *AccountHandler) AuthenticateGuide(w http.ResponseWriter, req *htt
 	w.WriteHeader(http.StatusOK)
 }
 
+func (handler *AccountHandler) GetUserByToken(w http.ResponseWriter, req *http.Request) {
+	// Decode the JSON request body into tokenBody struct
+
+	var tokenBody struct {
+		Token string `json:"token"`
+	}
+
+	err := json.NewDecoder(req.Body).Decode(&tokenBody)
+	if err != nil {
+		log.Println("Failed to decode tokenBody:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to decode tokenBody\n"))
+		return
+	}
+
+	// Log the tokenBody
+	log.Println("Request body:", tokenBody)
+
+	// Encode tokenBody to JSON
+	tokenBodyJSON, err := json.Marshal(tokenBody)
+	if err != nil {
+		log.Println("Failed to marshal tokenBody:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to marshal tokenBody\n"))
+		return
+	}
+
+	// Make a POST request to the Auth microservice to decode the token
+	decodeToken := "http://auth-service:8082/decode" // Change this to the actual decode endpoint
+	resp, err := http.Post(decodeToken, "application/json", bytes.NewBuffer(tokenBodyJSON))
+	if err != nil {
+		log.Println("Failed to make POST request to Auth microservice:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to make POST request to Auth microservice\n"))
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Failed to read response body:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to read response body\n"))
+		return
+	}
+
+	// Log the response body
+	log.Println("Response body:", string(body))
+
+	// Check if the response indicates a successful decode
+	if resp.StatusCode != http.StatusOK {
+		log.Println("Failed to decode token:", string(body))
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Failed to decode token\n"))
+		return
+	}
+
+	// Decode the response body into bodyJSON struct
+	var bodyJSON struct {
+		Username string     `json:"username"`
+		Role     model.Role `json:"role"`
+		Exp      int64      `json:"exp"`
+	}
+
+	err = json.Unmarshal(body, &bodyJSON)
+	if err != nil {
+		log.Println("Failed to decode response body:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to decode response body\n"))
+		return
+	}
+
+	// Call the service to find the account by username
+	account, err := handler.AccountService.FindAccountByUsername(bodyJSON.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	// Set response content type and status code
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// Encode only the account id into JSON and send the response
+	json.NewEncoder(w).Encode(struct {
+		ID string `json:"id"`
+	}{
+		ID: account.ID.String(),
+	})
+}
+
 // Function for getting Account by given id
 // Printing into terminal
 // Returning json object
@@ -216,6 +308,30 @@ func (handler *AccountHandler) GetByUsernameAndPassword(writer http.ResponseWrit
 
 	// Call the service to find the account by username and password
 	account, err := handler.AccountService.FindAccountByUsernameAndPassword(creds.Username, creds.Password)
+	if err != nil {
+		writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	// Set response content type and status code
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+
+	// Encode the account into JSON and send the response
+	json.NewEncoder(writer).Encode(account)
+}
+
+func (handler *AccountHandler) GetByUsername(writer http.ResponseWriter, req *http.Request) {
+	// Decode the request body to get credentials
+	var creds dto.Credentials
+	err := json.NewDecoder(req.Body).Decode(&creds)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Call the service to find the account by username and password
+	account, err := handler.AccountService.FindAccountByUsername(creds.Username)
 	if err != nil {
 		writer.WriteHeader(http.StatusNotFound)
 		return

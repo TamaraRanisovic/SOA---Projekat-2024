@@ -15,6 +15,7 @@ type Tour struct {
 	Tags        []string           `bson:"tags,omitempty" json:"tags"`
 	Difficulty  int                `bson:"difficulty,omitempty" json:"difficulty"`
 	Price       float64            `bson:"price,omitempty" json:"price"`
+	Guide_ID    string             `bson:"guide_id,omitempty" json:"guide_id"`
 }
 
 type Tours []*Tour

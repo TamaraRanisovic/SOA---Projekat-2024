@@ -125,6 +125,25 @@ func (pr *TourRepository) GetByName(name string) (model.Tours, error) {
 	return tours, nil
 }
 
+func (pr *TourRepository) GetByGuideId(id string) (model.Tours, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	toursCollection := pr.getCollection()
+
+	var tours model.Tours
+	toursCursor, err := toursCollection.Find(ctx, bson.M{"guide_id": id})
+	if err != nil {
+		pr.logger.Println(err)
+		return nil, err
+	}
+	if err = toursCursor.All(ctx, &tours); err != nil {
+		pr.logger.Println(err)
+		return nil, err
+	}
+	return tours, nil
+}
+
 /*
 	func (pr *TourRepository) Insert(tour *model.Tour) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

@@ -71,6 +71,9 @@ func startServer(handler *handler.AccountHandler) {
 	router.HandleFunc("/authenticate-guide/", handler.AuthenticateGuide).Methods("POST")
 
 	router.HandleFunc("/accounts/get", handler.GetByUsernameAndPassword).Methods("POST")
+	router.HandleFunc("/get/user/token", handler.GetUserByToken).Methods("POST")
+	router.HandleFunc("/accounts/get/username", handler.GetByUsername).Methods("POST")
+
 	//cors := gorillaHandlers.CORS(gorillaHandlers.AllowedOrigins([]string{"*"}))
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("/app/static")))

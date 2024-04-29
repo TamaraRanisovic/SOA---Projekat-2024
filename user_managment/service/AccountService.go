@@ -49,3 +49,11 @@ func (service *AccountService) FindAccountByUsernameAndPassword(username, passwo
 	}
 	return account, nil
 }
+func (service *AccountService) FindAccountByUsername(username string) (*model.Account, error) {
+	// Perform a database query to find the account by username and password
+	account, err := service.AccountRepo.FindByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+	return account, nil
+}

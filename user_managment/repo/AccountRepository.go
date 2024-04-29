@@ -29,22 +29,22 @@ func (repo *AccountRepository) FindAll() ([]model.Account, error) {
 }
 
 func (repo *AccountRepository) CreateAccount(account *model.Account) error {
-	
+
 	if account.Role == 0 {
 		println("Cannot add Account with this Role")
 		return nil
 	}
-		dbResult := repo.DatabaseConnection.Create(account)
-	
+	dbResult := repo.DatabaseConnection.Create(account)
+
 	if dbResult.Error != nil {
 		return dbResult.Error
 	}
-	
+
 	println("Rows affected: ", dbResult.RowsAffected)
 	return nil
 }
 
-func (repo *AccountRepository) BlockById(id string) (error) {
+func (repo *AccountRepository) BlockById(id string) error {
 	account := model.Account{}
 	dbResult := repo.DatabaseConnection.First(&account, "id = ?", id).Update("IsBlocked", true)
 
@@ -60,6 +60,15 @@ func (repo *AccountRepository) FindByUsernameAndPassword(username, password stri
 	var account model.Account
 
 	err := repo.DatabaseConnection.Where("username = ? AND password = ?", username, password).First(&account).Error
+	if err != nil {
+		return nil, err
+	}
+	return &account, nil
+}
+func (repo *AccountRepository) FindByUsername(username string) (*model.Account, error) {
+	var account model.Account
+
+	err := repo.DatabaseConnection.Where("username = ?", username).First(&account).Error
 	if err != nil {
 		return nil, err
 	}
