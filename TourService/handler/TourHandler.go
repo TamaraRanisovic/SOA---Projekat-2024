@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -364,6 +365,39 @@ func (p *TourHandler) AddTourHandler(w http.ResponseWriter, r *http.Request) {
 
 	if resp.StatusCode == http.StatusOK {
 
+		getUserIDURL := "http://user_management_service:8085/get/user/token" // Change this to the actual decode endpoint
+		resp2, err := http.Post(getUserIDURL, "application/json", bytes.NewBuffer([]byte(`{"token": "`+strings.TrimSpace(tourFormData.Token)+`"}`)))
+		if err != nil {
+			log.Println("Failed to make POST request to User Management microservice:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed to authenticate user\n"))
+			return
+		}
+
+		body, err := io.ReadAll(resp2.Body)
+		if err != nil {
+			log.Println("Failed to read response body:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed to read response body\n"))
+			return
+		}
+
+		// Log the response body
+		log.Println("ID GUIDEResponse body:", string(body))
+
+		// Decode the response body into bodyJSON struct
+		var bodyJSON struct {
+			Guide_ID string `json:"id"`
+		}
+
+		err = json.Unmarshal(body, &bodyJSON)
+		if err != nil {
+			log.Println("Failed to decode response body:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed to decode response body\n"))
+			return
+		}
+
 		tour := model.Tour{
 			Name:        tourFormData.Name,
 			Description: tourFormData.Description,
@@ -371,6 +405,7 @@ func (p *TourHandler) AddTourHandler(w http.ResponseWriter, r *http.Request) {
 			Tags:        tourFormData.Tags,
 			Difficulty:  tourFormData.Difficulty,
 			Price:       tourFormData.Price,
+			Guide_ID:    bodyJSON.Guide_ID,
 		}
 
 		err = p.repo.Insert(&tour)
