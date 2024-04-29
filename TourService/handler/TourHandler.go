@@ -50,25 +50,7 @@ func (p *TourHandler) GetAllTours(rw http.ResponseWriter, h *http.Request) {
 	}
 }
 
-func parseToken(req *http.Request) (string, error) {
-	err := req.ParseForm()
-	if err != nil {
-		return "failed to parse form data", errors.New("failed to parse form data")
-	}
-
-	token := req.Form.Get("token")
-	log.Println("token55:", token)
-
-	return token, nil
-}
 func (p *TourHandler) GetAllToursByGuide(w http.ResponseWriter, r *http.Request) {
-	/*token, err := parseToken(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}*/
-	/*fmt.Println("Received request")
-
 	var tokenBody struct {
 		Token string `json:"token"`
 	}
@@ -81,34 +63,10 @@ func (p *TourHandler) GetAllToursByGuide(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Log the tokenBody
-	log.Println("TOURSRequest body:", tokenBody)
-	tokenBody.Token = strings.Trim(tokenBody.Token, "{}")
-	log.Println("TRIM body:", tokenBody)
-
-	// Encode tokenBody to JSON
-	tokenBodyJSON, err := json.Marshal(tokenBody)
-	if err != nil {
-		log.Println("Failed to marshal tokenBody:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to marshal tokenBody\n"))
-		return
-	}
-	fmt.Println("TokenJSON:", bytes.NewBuffer(tokenBodyJSON))
+	log.Println("tokenBodyJSONTRIMSPACE: ", `{"token": "`+strings.TrimSpace(tokenBody.Token)+`"}`)
 
 	authenticateGuideURL := "http://user_management_service:8085/authenticate-guide/"
-	_, err1 := http.Post(authenticateGuideURL, "application/json", bytes.NewBuffer(tokenBodyJSON))
-
-	if err1 != nil {
-		log.Println("Failed to make POST request to User Management microservice:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to authenticate user\n"))
-		return
-	}
-
-	decodeToken := "http://user_management_service:8085/get/user/token" // Change this to the actual decode endpoint
-	resp, err := http.Post(decodeToken, "application/json", bytes.NewBuffer([]byte(tokenBodyJSON)))
-
+	resp, err := http.Post(authenticateGuideURL, "application/json", bytes.NewBuffer([]byte(`{"token": "`+strings.TrimSpace(tokenBody.Token)+`"}`)))
 	if err != nil {
 		log.Println("Failed to make POST request to User Management microservice:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -118,124 +76,64 @@ func (p *TourHandler) GetAllToursByGuide(w http.ResponseWriter, r *http.Request)
 
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Failed to read response body:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to read response body\n"))
-		return
+	if resp.StatusCode == http.StatusOK {
+
+		getUserIDURL := "http://user_management_service:8085/get/user/token"
+		resp2, err := http.Post(getUserIDURL, "application/json", bytes.NewBuffer([]byte(`{"token": "`+strings.TrimSpace(tokenBody.Token)+`"}`)))
+		if err != nil {
+			log.Println("Failed to make POST request to User Management microservice:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed to authenticate user\n"))
+			return
+		}
+
+		body, err := io.ReadAll(resp2.Body)
+		if err != nil {
+			log.Println("Failed to read response body:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed to read response body\n"))
+			return
+		}
+
+		log.Println("ID GUIDEResponse body:", string(body))
+
+		var bodyJSON struct {
+			Guide_ID string `json:"id"`
+		}
+
+		err = json.Unmarshal(body, &bodyJSON)
+		if err != nil {
+			log.Println("Failed to decode response body:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed to decode response body\n"))
+			return
+		}
+
+		tours, err := p.repo.GetByGuideId(bodyJSON.Guide_ID)
+		if err != nil {
+			p.logger.Print("Database exception: ", err)
+		}
+
+		jsonBytes, err := json.Marshal(tours)
+		if err != nil {
+			http.Error(w, "Unable to marshal JSON", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+
+		w.Write(jsonBytes)
+
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+
+	} else {
+		log.Println("Unauthorized: only guides can perform this action")
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("Unauthorized: only guides can perform this action\n"))
 	}
 
-	// Log the response body
-	log.Println("Response body:", string(body))
-
-	// Decode the response body into bodyJSON struct
-	var idJSON struct {
-		ID string `json:"id"`
-	}
-
-	err = json.Unmarshal(body, &idJSON)
-	if err != nil {
-		log.Println("Failed to decode response body:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to decode response body\n"))
-		return
-	}
-	*/
-	tours, err := p.repo.GetByGuideId("106ec3c1-8531-4ec7-9f78-68da0d9ea651")
-	if err != nil {
-		p.logger.Print("Database exception: ", err)
-	}
-
-	// Encode tours slice to JSON
-	jsonBytes, err := json.Marshal(tours)
-	if err != nil {
-		http.Error(w, "Unable to marshal JSON", http.StatusInternalServerError)
-		return
-	}
-
-	// Set Content-Type header to application/json
-	w.Header().Set("Content-Type", "application/json")
-
-	// Write JSON response
-	w.Write(jsonBytes)
-} /*
-
-	tokenBodyJSON, err := json.Marshal(tokenBody)
-	if err != nil {
-		log.Println("Failed to marshal tokenBody:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to marshal tokenBody\n"))
-		return
-	}
-
-	authenticateGuideURL := "http://user_management_service:8085/authenticate-guide/"
-	_, err1 := http.Post(authenticateGuideURL, "application/json", bytes.NewBuffer([]byte(tokenBodyJSON)))
-
-	if err1 != nil {
-		log.Println("Failed to make POST request to User Management microservice:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to authenticate user\n"))
-		return
-	}
-
-	decodeToken := "http://user_management_service:8085/get/user/token" // Change this to the actual decode endpoint
-	resp, err := http.Post(decodeToken, "application/json", bytes.NewBuffer([]byte(tokenBodyJSON)))
-
-	if err != nil {
-		log.Println("Failed to make POST request to User Management microservice:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to authenticate user\n"))
-		return
-	}
-
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Failed to read response body:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to read response body\n"))
-		return
-	}
-
-	// Log the response body
-	log.Println("Response body:", string(body))
-
-	// Decode the response body into bodyJSON struct
-	var idJSON struct {
-		ID string `json:"id"`
-	}
-
-	err = json.Unmarshal(body, &idJSON)
-	if err != nil {
-		log.Println("Failed to decode response body:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to decode response body\n"))
-		return
-	}
-
-	tours, err := p.repo.GetByGuideId(idJSON.ID)
-	if err != nil {
-		p.logger.Print("Database exception: ", err)
-	}
-
-	if tours == nil {
-		return
-	}
-	// Encode tours slice to JSON
-	jsonBytes, err := json.Marshal(tours)
-	if err != nil {
-		http.Error(w, "Unable to marshal JSON", http.StatusInternalServerError)
-		return
-	}
-
-	// Set Content-Type header to application/json
-	w.Header().Set("Content-Type", "application/json")
-
-	// Write JSON response
-	w.Write(jsonBytes)
-}*/
+}
 
 func (p *TourHandler) GetTourById(rw http.ResponseWriter, h *http.Request) {
 	vars := mux.Vars(h)

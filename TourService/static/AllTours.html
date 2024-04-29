@@ -2,12 +2,71 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Fetching</title>
+    <title>Guide's tours</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #3EEA58;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        #loadtours {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #14B82C;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #loadtours:hover {
+            background-color: #0f8f23;
+        }
+    </style>
 </head>
 <body>
-    <button onclick="fetchData()">Fetch Data</button>
-    <table id="dataTable">
+<div class="container">
+    <h1>Your tours</h1>
+
+	<table id="dataTable">
         <thead>
             <tr>
                 <th>Name</th>
@@ -23,7 +82,9 @@
         </tbody>
     </table>
 
-    <script>
+    <button onclick="fetchData()" id="loadtours">Load tours</button>
+</div>
+ <script>
         function fetchData() {
             console.log('Fetching data...');
 
