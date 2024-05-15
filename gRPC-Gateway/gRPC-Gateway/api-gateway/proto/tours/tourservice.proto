@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+option go_package = "proto/tours";
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+service TourService {
+    rpc GetAllTours(google.protobuf.Empty) returns (GetAllToursResponse) {
+        option (google.api.http) = {
+            get: "/tours"
+        };
+    }
+
+    rpc GetAllToursByGuide(GetAllToursByGuideRequest) returns (GetAllToursByGuideResponse) {
+        option (google.api.http) = {
+            get: "/tours/user"
+        };
+    }
+
+    rpc GetTourById(GetTourByIdRequest) returns (GetTourByIdResponse) {
+        option (google.api.http) = {
+            get: "/tours/{id}"
+        };
+    }
+
+    rpc AddTour(AddTourRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/tours/add"
+            body: "*"
+        };
+    }
+}
+
+
+message GetAllToursResponse {
+    repeated Tour tours = 1;
+}
+
+message GetAllToursByGuideRequest {
+    string guide_id = 1;
+}
+
+message GetAllToursByGuideResponse {
+    repeated Tour tours = 1;
+}
+
+message GetTourByIdRequest {
+    string id = 1;
+}
+
+message GetTourByIdResponse {
+    Tour tour = 1;
+}
+
+message AddTourRequest {
+    string name = 1;
+    string description = 2;
+    double length = 3;
+    repeated string tags = 4;
+    int32 difficulty = 5;
+    double price = 6;
+    string token = 7;
+}
+
+
+
+message Tour {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    double length = 4;
+    repeated string tags = 5;
+    int32 difficulty = 6;
+    double price = 7;
+    string guide_id = 8;
+}

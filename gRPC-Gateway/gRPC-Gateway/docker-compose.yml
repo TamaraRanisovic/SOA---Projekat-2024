@@ -1,0 +1,85 @@
+version: "3.8"
+
+services:
+  tour-service:
+    image: tour_service
+    build:
+      context: ./TourService
+      dockerfile: Dockerfile
+    container_name: tour_service
+    hostname: tour_service
+    restart: always
+    networks:
+      - network
+    environment:
+      MONGO_DB_URI: mongodb://root:pass@mongo:27017
+      TOUR_SERVICE_ADDRESS: ${TOUR_SERVICE_ADDRESS}
+    depends_on:
+      - mongo
+
+
+  api_gateway:
+    image: api_gateway
+    container_name: api_gateway
+    hostname: api_gateway
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      TOUR_SERVICE_ADDRESS: tour_service:8086
+      GATEWAY_ADDRESS: ${GATEWAY_ADDRESS}
+    depends_on:
+      - tour-service
+    networks:
+      - network
+    ports:
+      - "8087:8087"
+
+  mongo:
+      image: mongo
+      restart: always
+      ports:
+        - 27017:27017
+      networks:
+        - network
+      environment:
+        MONGO_INITDB_ROOT_USERNAME: root
+        MONGO_INITDB_ROOT_PASSWORD: pass
+        MONGO_INITDB_DATABASE: mongoDemo
+      healthcheck:
+        test: echo 'db.runCommand("ping").ok'
+        interval: 10s
+        timeout: 10s
+        retries: 10
+      volumes:
+        - mongo_store:/data/db
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    networks:
+      - network
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=root
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=pass
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin
+      - ME_CONFIG_MONGODB_URL=mongodb://mongo:27017/
+    depends_on:
+      - mongo
+    ports:
+      - 8081:8081
+    volumes:
+      - mongo_express_data:/data/db
+
+volumes:
+  database-data:
+    name: server-database
+  mongo_store:
+  mongo_express_data:
+
+networks:
+  network:
+    driver: bridge
