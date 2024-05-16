@@ -31,6 +31,7 @@ func (h TourHandler) GetAllTours(ctx context.Context, s *emptypb.Empty) (*tours.
 	var response tours.GetAllToursResponse
 	for _, tour := range toursList {
 		response.Tours = append(response.Tours, &tours.Tour{
+			Id:          tour.ID.String(),
 			Name:        tour.Name,
 			Description: tour.Description,
 			Length:      tour.Length,
@@ -60,6 +61,7 @@ func (h TourHandler) GetTourById(ctx context.Context, req *tours.GetTourByIdRequ
 	// Convert the tour to GetTourByIdResponse
 	response := &tours.GetTourByIdResponse{
 		Tour: &tours.Tour{
+			Id:          tour.ID.String(),
 			Name:        tour.Name,
 			Description: tour.Description,
 			Length:      tour.Length,
