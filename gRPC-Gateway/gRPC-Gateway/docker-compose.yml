@@ -18,6 +18,42 @@ services:
       - mongo
 
 
+  blog-service:
+    image: blog_service
+    build:
+      context: ./BlogService
+      dockerfile: Dockerfile
+    container_name: blog_service
+    hostname: blog_service
+    restart: always
+    environment:
+      BLOG_SERVICE_ADDRESS: ${BLOG_SERVICE_ADDRESS}
+    networks:
+      - network
+    depends_on:
+      - database
+
+  database:
+    image: mysql
+    container_name: mysql
+    restart: always
+    networks:
+      - network
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: students
+    volumes:
+      - database-data:/var/lib/mysql
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    networks:
+      - network
+    ports:
+      - 8083:8080
+
   api_gateway:
     image: api_gateway
     container_name: api_gateway
@@ -28,9 +64,11 @@ services:
     restart: always
     environment:
       TOUR_SERVICE_ADDRESS: tour_service:8086
+      BLOG_SERVICE_ADDRESS: blog_service:8085
       GATEWAY_ADDRESS: ${GATEWAY_ADDRESS}
     depends_on:
       - tour-service
+      - blog-service
     networks:
       - network
     ports:
