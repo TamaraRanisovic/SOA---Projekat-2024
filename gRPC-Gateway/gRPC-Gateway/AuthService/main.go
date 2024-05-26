@@ -17,9 +17,9 @@ import (
 func main() {
 	loginHandler := &handler.LoginHandler{}
 
-	listener, err := net.Listen("tcp", ":8085")
+	listener, err := net.Listen("tcp", ":8084")
 	if err != nil {
-		log.Fatalf("Failed to listen on port 8085: %v", err)
+		log.Fatalf("Failed to listen on port 8084: %v", err)
 	}
 
 	grpcServer := grpc.NewServer()
@@ -28,7 +28,7 @@ func main() {
 	auth.RegisterAuthServiceServer(grpcServer, loginHandler)
 
 	go func() {
-		log.Println("Starting gRPC server on port 8085")
+		log.Println("Starting gRPC server on port 8084")
 		if err := grpcServer.Serve(listener); err != nil {
 			log.Fatalf("Failed to serve gRPC server: %v", err)
 		}

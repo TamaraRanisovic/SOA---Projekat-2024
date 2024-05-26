@@ -9,5 +9,5 @@ RUN go build -o server
 FROM alpine
 COPY --from=build_container /app/server /usr/bin
 COPY --from=build_container /app/static /app/static
-EXPOSE 8084
+EXPOSE 8089
 ENTRYPOINT ["server"]

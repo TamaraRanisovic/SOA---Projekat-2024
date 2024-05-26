@@ -84,18 +84,18 @@ func (s LoginHandler) DecodeToken(ctx context.Context, req *auth.DecodeTokenRequ
 		return jwtKey, nil
 	})
 	if err != nil {
-		return &auth.DecodeTokenResponse{Is_valid: false, Message: "Failed to parse token: " + err.Error()}, nil
+		return &auth.DecodeTokenResponse{IsValid: false, Message: "Failed to parse token: " + err.Error()}, nil
 	}
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
-		return &auth.DecodeTokenResponse{Is_valid: false, Message: "Invalid token"}, nil
+		return &auth.DecodeTokenResponse{IsValid: false, Message: "Invalid token"}, nil
 	}
 
 	return &auth.DecodeTokenResponse{
 		IsValid:  true,
 		Username: claims.Username,
-		Role:     string(claims.Role),
+		Role:     string(rune(claims.Role)),
 		Exp:      time.Unix(claims.ExpiresAt, 0).String(),
 	}, nil
 }

@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+option go_package = "proto/users";
+
+import "google/protobuf/empty.proto";
+
+service UserService {
+  rpc AuthenticateGuide (TokenRequest) returns (google.protobuf.Empty);
+  rpc GetUserByToken (TokenRequest) returns (UserIdResponse);
+  rpc BlockAccount (AccountIdRequest) returns (google.protobuf.Empty);
+  rpc GetByUsernameAndPassword (Credentials) returns (AccountDetailResponse);
+  rpc GetByUsername (UsernameRequest) returns (AccountDetailResponse);
+  rpc GetAccount (UserIdRequest) returns (AccountDetailResponse);
+  rpc GetAllAccounts (google.protobuf.Empty) returns (AccountsResponse);
+  rpc CreateAccount  (AccountDetailResponse) returns (google.protobuf.Empty);
+}
+
+
+message TokenRequest {
+  string token = 1;
+}
+
+message UserIdResponse {
+  string id = 1;
+}
+
+message AccountIdRequest {
+  string id = 1;
+}
+
+message UsernameRequest {
+  string username = 1;
+}
+
+message Credentials {
+  string username = 1;
+  string password = 2;
+}
+
+
+message AccountDetailResponse {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  int32 role = 4;
+  bool isblocked = 5;
+  UserDetail user = 6;
+}
+
+message UserDetail {
+  string id = 1;
+  string name = 2;
+  string surname = 3;
+  string picture = 4;
+  string biography = 5;
+  string moto = 6;
+}
+
+message AccountsResponse {
+  repeated AccountDetailResponse accounts = 1;
+}
+
+message UserIdRequest {
+  string id = 1;
+}
+
+
+
+

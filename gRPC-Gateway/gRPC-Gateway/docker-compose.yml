@@ -33,6 +33,36 @@ services:
     depends_on:
       - database
 
+  auth-service:
+    image: auth_service
+    build:
+      context: ./AuthService
+      dockerfile: Dockerfile
+    container_name: auth_service
+    hostname: auth_service
+    restart: always
+    environment:
+      BLOG_SERVICE_ADDRESS: ${AUTH_SERVICE_ADDRESS}
+    networks:
+      - network
+    depends_on:
+      - database
+
+  user-service:
+    image: user_service
+    build:
+      context: ./UserManagementService
+      dockerfile: Dockerfile
+    container_name: user_service
+    hostname: user_service
+    restart: always
+    environment:
+      BLOG_SERVICE_ADDRESS: ${USER_MANAGEMENT_SERVICE_ADDRESS}
+    networks:
+      - network
+    depends_on:
+      - database
+
   database:
     image: mysql
     container_name: mysql
