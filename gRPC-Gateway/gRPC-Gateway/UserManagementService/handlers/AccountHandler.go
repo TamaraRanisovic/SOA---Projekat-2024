@@ -11,14 +11,23 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"userservice.com/model"
-	"userservice.com/service"
-
+	"userservice.com/proto/auth"
+	"userservice.com/proto/users"
 	pb "userservice.com/proto/users" // Update this to the correct import path
+	"userservice.com/service"
 )
 
 type AccountHandler struct {
-	pb.UnimplementedUserServiceServer
-	AccountService *service.AccountService
+	users.UnimplementedUserServiceServer
+	AccountService    *service.AccountService
+	AuthServiceClient auth.AuthServiceClient
+}
+
+func NewAccountHandler(accountService *service.AccountService, authServiceClient auth.AuthServiceClient) *AccountHandler {
+	return &AccountHandler{
+		AccountService:    accountService,
+		AuthServiceClient: authServiceClient,
+	}
 }
 
 var jwtKey = []byte("my_secret_key")
@@ -29,45 +38,55 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-func (handler *AccountHandler) AuthenticateGuide(ctx context.Context, req *pb.TokenRequest) (*emptypb.Empty, error) {
+func (handler *AccountHandler) AuthenticateGuide(ctx context.Context, req *pb.TokenRequest) (*empty.Empty, error) {
 	var role model.Role = 1
 
-	// Decode token logic (You may need to change this based on your actual implementation)
-	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(req.Token, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
-	})
+	// Call the gRPC service to decode the token
+	resp, err := handler.AuthServiceClient.DecodeToken(ctx, &auth.DecodeTokenRequest{Token: req.Token})
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "Failed to parse token: %v", err)
+		log.Printf("Failed to decode token: %v", err)
+		return nil, status.Errorf(codes.Internal, "Failed to decode token")
 	}
 
-	if !token.Valid || claims.Role != role {
+	// Check if the response indicates a successful decoding
+	if !resp.IsValid {
+		log.Println("Failed to decode token")
+		return nil, status.Errorf(codes.Unauthenticated, "Failed to decode token")
+	}
+
+	// Check if the decoded token has the expected role
+	if resp.Role != int32(role) {
+		log.Println("Access denied")
 		return nil, status.Errorf(codes.PermissionDenied, "Access denied")
 	}
 
+	// Return success if the token is valid and has the expected role
 	return &empty.Empty{}, nil
 }
 
 func (handler *AccountHandler) GetUserByToken(ctx context.Context, req *pb.TokenRequest) (*pb.UserIdResponse, error) {
-	// Decode token logic (You may need to change this based on your actual implementation)
-	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(req.Token, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
-	})
+	// Call the gRPC service to decode the token
+	resp, err := handler.AuthServiceClient.DecodeToken(ctx, &auth.DecodeTokenRequest{Token: req.Token})
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "Failed to parse token: %v", err)
+		log.Printf("Failed to decode token: %v", err)
+		return nil, status.Errorf(codes.Internal, "Failed to decode token")
 	}
 
-	if !token.Valid {
-		return nil, status.Errorf(codes.PermissionDenied, "Invalid token")
+	// Check if the response indicates a successful decoding
+	if !resp.IsValid {
+		log.Println("Failed to decode token")
+		return nil, status.Errorf(codes.Unauthenticated, "Failed to decode token")
 	}
 
-	account, err := handler.AccountService.FindAccountByUsername(claims.Username)
+	// If the token is valid, retrieve the user ID using the decoded username
+	userID, err := handler.AccountService.FindUserIDByUsername(resp.Username)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "Account not found")
+		log.Printf("Failed to find user ID for username %s: %v", resp.Username, err)
+		return nil, status.Errorf(codes.NotFound, "User not found")
 	}
 
-	return &pb.UserIdResponse{Id: account.ID.String()}, nil
+	// Return the user ID in the response
+	return &pb.UserIdResponse{Id: userID}, nil
 }
 
 func (handler *AccountHandler) BlockAccount(ctx context.Context, req *pb.AccountIdRequest) (*emptypb.Empty, error) {

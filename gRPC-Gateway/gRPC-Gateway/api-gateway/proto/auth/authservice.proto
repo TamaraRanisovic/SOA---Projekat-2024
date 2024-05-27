@@ -2,10 +2,22 @@ syntax = "proto3";
 
 option go_package = "proto/auth";
 
+import "google/api/annotations.proto";
+
 service AuthService {
-  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc Login (LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/login"
+      body: "*"
+    };
+  }
   
-  rpc DecodeToken (DecodeTokenRequest) returns (DecodeTokenResponse);
+  rpc DecodeToken (DecodeTokenRequest) returns (DecodeTokenResponse) {
+    option (google.api.http) = {
+      post: "/decode"
+      body: "*"
+    };
+  }
 }
 
 message LoginRequest {

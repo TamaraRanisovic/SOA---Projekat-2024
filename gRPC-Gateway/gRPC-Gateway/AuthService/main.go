@@ -9,13 +9,25 @@ import (
 
 	handler "authservice.com/handlers"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
 	"authservice.com/proto/auth"
+	"authservice.com/proto/users"
 )
 
 func main() {
-	loginHandler := &handler.LoginHandler{}
+
+	userConn, err := grpc.Dial("user-service:8089", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to UserService: %v", err)
+	}
+	defer userConn.Close()
+
+	// Create a client instance for the user service
+	userServiceClient := users.NewUserServiceClient(userConn)
+
+	loginHandler := &handler.LoginHandler{UserServiceClient: userServiceClient}
 
 	listener, err := net.Listen("tcp", ":8084")
 	if err != nil {

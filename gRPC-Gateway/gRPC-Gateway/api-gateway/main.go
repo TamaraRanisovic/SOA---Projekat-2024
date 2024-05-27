@@ -9,8 +9,10 @@ import (
 	"syscall"
 
 	"example/gateway/config"
+	"example/gateway/proto/auth"
 	"example/gateway/proto/blogs"
 	"example/gateway/proto/tours"
+	"example/gateway/proto/users"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -44,6 +46,28 @@ func main() {
 	}
 	defer blogConn.Close()
 
+	authConn, err := grpc.DialContext(
+		context.Background(),
+		cfg.AuthServiceAddress,
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalln("Failed to dial AuthService:", err)
+	}
+	defer authConn.Close()
+
+	userConn, err := grpc.DialContext(
+		context.Background(),
+		cfg.UserServiceAddress,
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalln("Failed to dial AuthService:", err)
+	}
+	defer userConn.Close()
+
 	gwmux := runtime.NewServeMux()
 
 	// Register TourService handler
@@ -66,6 +90,26 @@ func main() {
 	)
 	if err != nil {
 		log.Fatalln("Failed to register BlogService gateway:", err)
+	}
+
+	authClient := auth.NewAuthServiceClient(authConn)
+	err = auth.RegisterAuthServiceHandlerClient(
+		context.Background(),
+		gwmux,
+		authClient,
+	)
+	if err != nil {
+		log.Fatalln("Failed to register AuthService gateway:", err)
+	}
+
+	userClient := users.NewUserServiceClient(userConn)
+	err = users.RegisterUserServiceHandlerClient(
+		context.Background(),
+		gwmux,
+		userClient,
+	)
+	if err != nil {
+		log.Fatalln("Failed to register UserService gateway:", err)
 	}
 
 	gwServer := &http.Server{

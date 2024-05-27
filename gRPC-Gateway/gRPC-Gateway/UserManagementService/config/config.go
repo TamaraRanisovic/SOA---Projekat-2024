@@ -3,11 +3,13 @@ package config
 import "os"
 
 type Config struct {
-	Address string
+	AuthServiceAddress string
+	Address            string
 }
 
 func GetConfig() Config {
 	return Config{
-		Address: os.Getenv("USER_MANAGEMENT_SERVICE_ADDRESS"),
+		Address:            os.Getenv("USER_MANAGEMENT_SERVICE_ADDRESS"),
+		AuthServiceAddress: os.Getenv("AUTH_SERVICE_ADDRESS"),
 	}
 }

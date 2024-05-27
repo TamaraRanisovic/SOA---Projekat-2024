@@ -1,25 +1,24 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"net/http"
+	"log"
 	"time"
 
-	"authservice.com/dto"
 	"authservice.com/model"
 
 	"authservice.com/proto/auth"
+	"authservice.com/proto/users"
 	"github.com/dgrijalva/jwt-go"
 )
 
 type LoginHandler struct {
 	auth.UnimplementedAuthServiceServer
+	UserServiceClient users.UserServiceClient
 }
 
-func NewLoginHandler() *LoginHandler {
-	return &LoginHandler{}
+func NewLoginHandler(userServiceClient users.UserServiceClient) *LoginHandler {
+	return &LoginHandler{UserServiceClient: userServiceClient}
 }
 
 var jwtKey = []byte("my_secret_key")
@@ -49,33 +48,24 @@ func createToken(username string, role model.Role) (string, error) {
 }
 
 func (s *LoginHandler) Login(ctx context.Context, req *auth.LoginRequest) (*auth.LoginResponse, error) {
-	creds := dto.Credentials{
+	// Create a request to authenticate the user via gRPC
+	user, err := s.UserServiceClient.GetByUsernameAndPassword(ctx, &users.Credentials{
 		Username: req.Username,
 		Password: req.Password,
-	}
-
-	credsJSON, err := json.Marshal(creds)
+	})
 	if err != nil {
-		return &auth.LoginResponse{Success: false, Message: "Failed to marshal credentials"}, nil
-	}
-
-	getByUsernameAndPasswordURL := "http://localhost:8085/accounts/get"
-	resp, err := http.Post(getByUsernameAndPasswordURL, "application/json", bytes.NewBuffer(credsJSON))
-	if err != nil || resp.StatusCode != http.StatusOK {
+		log.Printf("Failed to authenticate user: %v", err)
 		return &auth.LoginResponse{Success: false, Message: "Failed to authenticate user"}, nil
 	}
-	defer resp.Body.Close()
 
-	var account model.Account
-	if err := json.NewDecoder(resp.Body).Decode(&account); err != nil {
-		return &auth.LoginResponse{Success: false, Message: "Failed to decode account data"}, nil
-	}
-
-	tokenString, err := createToken(creds.Username, account.Role)
+	// Create a JWT token for the authenticated user
+	tokenString, err := createToken(req.Username, model.Role(user.Role))
 	if err != nil {
+		log.Printf("Failed to generate token: %v", err)
 		return &auth.LoginResponse{Success: false, Message: "Failed to generate token"}, nil
 	}
 
+	// Return the response with the token
 	return &auth.LoginResponse{Success: true, Message: "You've successfully logged in!", Token: tokenString}, nil
 }
 
@@ -95,7 +85,7 @@ func (s LoginHandler) DecodeToken(ctx context.Context, req *auth.DecodeTokenRequ
 	return &auth.DecodeTokenResponse{
 		IsValid:  true,
 		Username: claims.Username,
-		Role:     string(rune(claims.Role)),
+		Role:     int32(claims.Role),
 		Exp:      time.Unix(claims.ExpiresAt, 0).String(),
 	}, nil
 }

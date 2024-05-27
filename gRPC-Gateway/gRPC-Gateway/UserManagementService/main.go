@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 	"os"
@@ -11,17 +12,18 @@ import (
 	"userservice.com/repo"
 	"userservice.com/service"
 
-	handler "userservice.com/handlers"
-	"userservice.com/proto/users"
-
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	handler "userservice.com/handlers"
+	"userservice.com/proto/auth"
+	"userservice.com/proto/users"
 )
 
 func initDB() *gorm.DB {
-	connectionStr := "root:root@tcp(localhost:3306)/students?charset=utf8mb4&parseTime=True&loc=Local"
+	connectionStr := "root:root@tcp(database:3306)/students?charset=utf8mb4&parseTime=True&loc=Local"
 	database, err := gorm.Open(mysql.Open(connectionStr), &gorm.Config{})
 	if err != nil {
 		print(err)
@@ -75,9 +77,34 @@ func main() {
 		return
 	}
 
+	authConn, err := grpc.Dial("auth-service:8084", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to AuthService: %v", err)
+	}
+	defer authConn.Close()
+
+	// Create a client instance for the user service
+	authServiceClient := auth.NewAuthServiceClient(authConn)
+
+	authResp, err := authServiceClient.Login(context.Background(), &auth.LoginRequest{
+		Username: "aya",
+		Password: "123",
+	})
+	if err != nil {
+		log.Fatalf("Failed to call Login method: %v", err)
+	}
+
+	// Handle the response from the Auth service
+	if authResp.Success {
+		log.Println("Login successful")
+		log.Println("Token:", authResp.Token)
+	} else {
+		log.Println("Login failed:", authResp.Message)
+	}
+
 	repo := &repo.AccountRepository{DatabaseConnection: database}
 	service := &service.AccountService{AccountRepo: repo}
-	handler := &handler.AccountHandler{AccountService: service}
+	handler := &handler.AccountHandler{AccountService: service, AuthServiceClient: authServiceClient}
 
 	listener, err := net.Listen("tcp", ":8089")
 	if err != nil {
