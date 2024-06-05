@@ -3,12 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport">
-    <meta http-equiv="Content-Type" content="text/html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create a Tour</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
     <style>
         body {
             background-color: #f8f9fa;
@@ -24,19 +22,19 @@
         }
 
         .card-header {
-            background-color: #7d3cff; /* Vibrant purple color */
+            background-color: #7d3cff;
             color: white;
             border-radius: 15px 15px 0 0;
         }
 
         .btn-primary {
-            background-color: #7d3cff; /* Vibrant purple color */
-            border-color: #7d3cff; /* Vibrant purple color */
+            background-color: #7d3cff;
+            border-color: #7d3cff;
         }
 
         .btn-primary:hover {
-            background-color: #5b20ad; /* Slightly darker shade for hover */
-            border-color: #5b20ad; /* Slightly darker shade for hover */
+            background-color: #5b20ad;
+            border-color: #5b20ad;
         }
     </style>
 </head>
@@ -47,29 +45,29 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header text-center">
-                        <h3>Create a Tour5</h3>
+                        <h3>Create a Tour</h3>
                     </div>
                     <div class="card-body">
-                        <form id="tourForm" action="/tours/add" method="post" enctype="multipart/form-data">
+                        <form id="tourForm">
                             <div class="form-group">
                                 <label for="name">Name</label>
-                                <input type="text" class="form-control" id="name" name="name" placeholder="Enter name">
+                                <input type="text" class="form-control" id="name" name="name" placeholder="Enter name" required>
                             </div>
                             <div class="form-group">
                                 <label for="description">Description</label>
-                                <textarea class="form-control" rows="6" id="description" name="description" placeholder="Enter description"></textarea>
+                                <textarea class="form-control" rows="6" id="description" name="description" placeholder="Enter description" required></textarea>
                             </div>
                             <div class="form-group">
                                 <label for="length">Length (in km)</label>
-                                <input type="number" class="form-control" id="length" name="length" placeholder="Enter length">
+                                <input type="number" class="form-control" id="length" name="length" placeholder="Enter length" required>
                             </div>
                             <div class="form-group">
                                 <label for="tags">Tags</label>
-                                <input type="text" class="form-control" id="tags" name="tags" placeholder="Enter tags separated by commas">
+                                <input type="text" class="form-control" id="tags" name="tags" placeholder="Enter tags separated by commas" required>
                             </div>
                             <div class="form-group">
                                 <label for="difficulty">Difficulty</label>
-                                <select class="form-control" id="difficulty" name="difficulty">
+                                <select class="form-control" id="difficulty" name="difficulty" required>
                                     <option value="1">1 (Easy)</option>
                                     <option value="2">2</option>
                                     <option value="3">3</option>
@@ -84,9 +82,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="price">Price</label>
-                                <input type="number" class="form-control" id="price" name="price" placeholder="Enter price">
+                                <input type="number" class="form-control" id="price" name="price" placeholder="Enter price" required>
                             </div>
-                            <!-- Hidden input field to store JWT token -->
                             <input type="hidden" id="token" name="token">
                             <button id="submitButton" type="button" class="btn btn-primary btn-block">Submit</button>
                             <button type="button" class="btn btn-secondary btn-block" onclick="window.location.href='/';">Cancel</button>
@@ -96,25 +93,40 @@
             </div>
         </div>
     </div>
-    <!-- JavaScript to retrieve JWT token and submit form with token included -->
     <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Retrieve JWT token from local storage
-    const token = localStorage.getItem('jwtToken');
+        document.addEventListener('DOMContentLoaded', function () {
+            const token = localStorage.getItem('jwtToken');
+            document.getElementById('token').value = token;
 
-    // Set the value of the hidden input field with the JWT token
-    document.getElementById('token').value = token;
+            document.getElementById('submitButton').addEventListener('click', function (event) {
+                event.preventDefault();
 
-    // Add event listener to the form submission
-    document.getElementById('submitButton').addEventListener('click', function (event) {
-        // Prevent the default form submission behavior
-        event.preventDefault();
+                if (!token) {
+                    alert('Authentication token is missing. Please log in again.');
+                    return;
+                }
 
-        // Submit the form
-        document.getElementById('tourForm').submit();
-    });
-});
+                const form = document.getElementById('tourForm');
+                const formData = new FormData(form);
+                const data = {};
+                formData.forEach((value, key) => data[key] = value);
 
+                fetch('http://localhost:8087/tours/add', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                }).then(data => {
+                    alert('Tour added successfully');
+                    window.location.href = '/';
+                }).catch(error => {
+                    alert('Failed to add tour: ' + error);
+                });
+            });
+        });
     </script>
 </body>
 

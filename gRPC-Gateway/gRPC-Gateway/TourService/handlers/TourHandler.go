@@ -2,8 +2,12 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"log"
+	"tourservice/model"
 	"tourservice/proto/tours"
+	"tourservice/proto/users"
+
 	"tourservice/repo"
 
 	"google.golang.org/grpc/codes"
@@ -15,11 +19,12 @@ type TourHandler struct {
 	logger *log.Logger
 	repo   *repo.TourRepository
 	tours.UnimplementedTourServiceServer
+	UserServiceClient users.UserServiceClient
 }
 
 // Injecting the logger makes this code much more testable.
-func NewTourHandler(l *log.Logger, r *repo.TourRepository) *TourHandler {
-	return &TourHandler{logger: l, repo: r}
+func NewTourHandler(l *log.Logger, r *repo.TourRepository, userServiceClient users.UserServiceClient) *TourHandler {
+	return &TourHandler{logger: l, repo: r, UserServiceClient: userServiceClient}
 }
 
 func (h TourHandler) GetAllTours(ctx context.Context, s *emptypb.Empty) (*tours.GetAllToursResponse, error) {
@@ -72,4 +77,39 @@ func (h TourHandler) GetTourById(ctx context.Context, req *tours.GetTourByIdRequ
 		},
 	}
 	return response, nil
+}
+
+func (h TourHandler) AddTour(ctx context.Context, req *tours.AddTourRequest) (*emptypb.Empty, error) {
+
+	authReq := &users.TokenRequest{Token: req.Token}
+	_, err := h.UserServiceClient.AuthenticateGuide(ctx, authReq)
+	if err != nil {
+		log.Println("Failed to authenticate guide:", err)
+		return nil, errors.New("failed to authenticate guide")
+	}
+
+	getUserReq := &users.TokenRequest{Token: req.Token}
+	userResp, err := h.UserServiceClient.GetUserByToken(ctx, getUserReq)
+	if err != nil {
+		log.Println("Failed to get guide ID:", err)
+		return nil, errors.New("failed to get guide ID")
+	}
+
+	newTour := model.Tour{
+		Name:        req.Name,
+		Description: req.Description,
+		Length:      req.Length,
+		Tags:        req.Tags,
+		Difficulty:  int(req.Difficulty),
+		Price:       req.Price,
+		Guide_ID:    userResp.Id,
+	}
+
+	err = h.repo.Insert(&newTour)
+	if err != nil {
+		log.Println("Failed to insert tour:", err)
+		return nil, errors.New("failed to insert tour")
+	}
+
+	return &emptypb.Empty{}, nil
 }

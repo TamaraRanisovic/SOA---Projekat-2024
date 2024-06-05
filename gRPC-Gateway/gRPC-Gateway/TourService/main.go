@@ -11,14 +11,25 @@ import (
 	"tourservice/config"
 	handler "tourservice/handlers"
 	"tourservice/proto/tours"
+	"tourservice/proto/users"
 	"tourservice/repo"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
 
 func main() {
 	cfg := config.GetConfig()
+
+	userConn, err := grpc.Dial("user-service:8089", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to UserService: %v", err)
+	}
+	defer userConn.Close()
+
+	// Create a client instance for the user service
+	userServiceClient := users.NewUserServiceClient(userConn)
 
 	listener, err := net.Listen("tcp", cfg.Address)
 	if err != nil {
@@ -53,7 +64,7 @@ func main() {
 	store.Ping()
 
 	//Initialize the handler and inject said logger
-	tourHandler := handler.NewTourHandler(logger, store)
+	tourHandler := handler.NewTourHandler(logger, store, userServiceClient)
 
 	// Bootstrap gRPC service server and respond to request.
 	tours.RegisterTourServiceServer(grpcServer, tourHandler)
