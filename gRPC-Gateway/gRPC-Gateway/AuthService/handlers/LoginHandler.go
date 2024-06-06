@@ -10,6 +10,8 @@ import (
 	"authservice.com/proto/auth"
 	"authservice.com/proto/users"
 	"github.com/dgrijalva/jwt-go"
+
+	"go.opentelemetry.io/otel"
 )
 
 type LoginHandler struct {
@@ -48,6 +50,10 @@ func createToken(username string, role model.Role) (string, error) {
 }
 
 func (s *LoginHandler) Login(ctx context.Context, req *auth.LoginRequest) (*auth.LoginResponse, error) {
+	tr := otel.Tracer("authservice.handlers.LoginHandler.Login")
+	ctx, span := tr.Start(ctx, "LoginHandler.Login")
+	defer span.End()
+
 	// Create a request to authenticate the user via gRPC
 	user, err := s.UserServiceClient.GetByUsernameAndPassword(ctx, &users.Credentials{
 		Username: req.Username,
@@ -69,7 +75,11 @@ func (s *LoginHandler) Login(ctx context.Context, req *auth.LoginRequest) (*auth
 	return &auth.LoginResponse{Success: true, Message: "You've successfully logged in!", Token: tokenString}, nil
 }
 
-func (s LoginHandler) DecodeToken(ctx context.Context, req *auth.DecodeTokenRequest) (*auth.DecodeTokenResponse, error) {
+func (s *LoginHandler) DecodeToken(ctx context.Context, req *auth.DecodeTokenRequest) (*auth.DecodeTokenResponse, error) {
+	tr := otel.Tracer("authservice.handlers.LoginHandler.DecodeToken")
+	ctx, span := tr.Start(ctx, "LoginHandler.DecodeToken")
+	defer span.End()
+
 	token, err := jwt.ParseWithClaims(req.Token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return jwtKey, nil
 	})

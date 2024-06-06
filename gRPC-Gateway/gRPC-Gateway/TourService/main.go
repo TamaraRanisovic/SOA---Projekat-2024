@@ -14,12 +14,78 @@ import (
 	"tourservice/proto/users"
 	"tourservice/repo"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
 
+var tp *trace.TracerProvider
+
+func initTracer() (*trace.TracerProvider, error) {
+	url := os.Getenv("JAEGER_ENDPOINT")
+	if len(url) > 0 {
+		return initJaegerTracer(url)
+	} else {
+		return initFileTracer()
+	}
+}
+
+func initFileTracer() (*trace.TracerProvider, error) {
+	log.Println("Initializing tracing to traces.json")
+	f, err := os.Create("traces.json")
+	if err != nil {
+		return nil, err
+	}
+	exporter, err := stdouttrace.New(
+		stdouttrace.WithWriter(f),
+		stdouttrace.WithPrettyPrint(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return trace.NewTracerProvider(
+		trace.WithBatcher(exporter),
+		trace.WithSampler(trace.AlwaysSample()),
+	), nil
+}
+
+func initJaegerTracer(url string) (*trace.TracerProvider, error) {
+	log.Printf("Initializing tracing to jaeger at %s\n", url)
+	exporter, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(url)))
+	if err != nil {
+		return nil, err
+	}
+	return trace.NewTracerProvider(
+		trace.WithBatcher(exporter),
+		trace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String("tour-service"),
+		)),
+	), nil
+}
 func main() {
+	log.SetOutput(os.Stderr)
+
+	// OpenTelemetry
+	var err error
+	tp, err = initTracer()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}()
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	cfg := config.GetConfig()
 
 	userConn, err := grpc.Dial("user-service:8089", grpc.WithTransportCredentials(insecure.NewCredentials()))
