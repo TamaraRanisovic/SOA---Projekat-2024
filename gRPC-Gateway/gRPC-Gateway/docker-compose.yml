@@ -1,5 +1,10 @@
 version: "3.8"
 
+x-logging: &fluent-bit
+  driver: fluentd
+  options:
+    fluentd-address: ${FLUENT_BIT_ADDRESS}:24224
+
 services:
   tour-service:
     image: tour_service
@@ -11,9 +16,12 @@ services:
     restart: always
     networks:
       - network
+      - monitoring
     environment:
       MONGO_DB_URI: mongodb://root:pass@mongo:27017
       TOUR_SERVICE_ADDRESS: ${TOUR_SERVICE_ADDRESS}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
+    logging: *fluent-bit
     depends_on:
       - mongo
 
@@ -28,8 +36,11 @@ services:
     restart: always
     environment:
       BLOG_SERVICE_ADDRESS: ${BLOG_SERVICE_ADDRESS}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
     networks:
       - network
+      - monitoring
+    logging: *fluent-bit
     depends_on:
       - database
 
@@ -43,8 +54,11 @@ services:
     restart: always
     environment:
       AUTH_SERVICE_ADDRESS: ${AUTH_SERVICE_ADDRESS}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
     networks:
       - network
+      - monitoring
+    logging: *fluent-bit
     depends_on:
       - database
 
@@ -58,8 +72,11 @@ services:
     restart: always
     environment:
       USER_MANAGEMENT_SERVICE_ADDRESS: ${USER_MANAGEMENT_SERVICE_ADDRESS}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
     networks:
       - network
+      - monitoring
+    logging: *fluent-bit
     depends_on:
       - database
 
@@ -69,9 +86,11 @@ services:
     restart: always
     networks:
       - network
+      - monitoring
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: students
+    logging: *fluent-bit
     volumes:
       - database-data:/var/lib/mysql
 
@@ -81,6 +100,8 @@ services:
     restart: always
     networks:
       - network
+      - monitoring
+    logging: *fluent-bit
     ports:
       - 8083:8080
 
@@ -98,13 +119,16 @@ services:
       AUTH_SERVICE_ADDRESS: auth_service:8084
       USER_MANAGEMENT_SERVICE_ADDRESS: user_service:8089
       GATEWAY_ADDRESS: ${GATEWAY_ADDRESS}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
     depends_on:
       - tour-service
       - blog-service
       - auth-service
       - user-service
+    logging: *fluent-bit
     networks:
       - network
+      - monitoring
     ports:
       - "8087:8087"
 
@@ -155,6 +179,7 @@ services:
         - 27017:27017
       networks:
         - network
+        - monitoring
       environment:
         MONGO_INITDB_ROOT_USERNAME: root
         MONGO_INITDB_ROOT_PASSWORD: pass
@@ -164,6 +189,7 @@ services:
         interval: 10s
         timeout: 10s
         retries: 10
+      logging: *fluent-bit
       volumes:
         - mongo_store:/data/db
 
@@ -172,6 +198,7 @@ services:
     restart: always
     networks:
       - network
+      - monitoring
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongo
       - ME_CONFIG_MONGODB_ADMINUSERNAME=root
@@ -181,6 +208,7 @@ services:
       - ME_CONFIG_MONGODB_URL=mongodb://mongo:27017/
     depends_on:
       - mongo
+    logging: *fluent-bit
     ports:
       - 8081:8081
     volumes:
@@ -200,4 +228,5 @@ networks:
   network:
     driver: bridge
   monitoring:
+    external: true
     name: monitoring

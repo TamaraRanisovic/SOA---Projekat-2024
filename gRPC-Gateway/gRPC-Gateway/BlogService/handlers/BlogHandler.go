@@ -7,6 +7,7 @@ import (
 	"blogservice/proto/blogs"
 	"blogservice/service"
 
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -21,7 +22,12 @@ func NewBlogHandler(s *service.BlogService) *BlogHandler {
 	return &BlogHandler{BlogService: s}
 }
 
+// Instrumented method for getting a blog by ID
 func (h BlogHandler) GetBlogById(ctx context.Context, req *blogs.GetBlogByIdRequest) (*blogs.GetBlogByIdResponse, error) {
+	tr := otel.Tracer("blogservice.handlers.BlogHandler.GetBlogById")
+	ctx, span := tr.Start(ctx, "GetBlogById")
+	defer span.End()
+
 	id := req.Id
 
 	blog, err := h.BlogService.FindBlog(id)
@@ -43,7 +49,12 @@ func (h BlogHandler) GetBlogById(ctx context.Context, req *blogs.GetBlogByIdRequ
 	return response, nil
 }
 
+// Instrumented method for getting all blogs
 func (h BlogHandler) GetAllBlogs(ctx context.Context, s *emptypb.Empty) (*blogs.GetAllBlogsResponse, error) {
+	tr := otel.Tracer("blogservice.handlers.BlogHandler.GetAllBlogs")
+	ctx, span := tr.Start(ctx, "GetAllBlogs")
+	defer span.End()
+
 	blogsList, err := h.BlogService.FindAllBlogs()
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Unable to fetch blogs")
@@ -60,7 +71,6 @@ func (h BlogHandler) GetAllBlogs(ctx context.Context, s *emptypb.Empty) (*blogs.
 		})
 	}
 	return &response, nil
-
 }
 
 /*
