@@ -1,0 +1,11 @@
+# Use the official Prometheus image as the base image
+FROM prom/prometheus:latest
+
+# Set the working directory
+WORKDIR /etc/prometheus
+
+# Copy the Prometheus configuration file to the container
+COPY prometheus/prometheus.yml /etc/prometheus/prometheus.yml
+
+# Set the command to start Prometheus
+CMD ["--config.file=/etc/prometheus/prometheus.yml"]
