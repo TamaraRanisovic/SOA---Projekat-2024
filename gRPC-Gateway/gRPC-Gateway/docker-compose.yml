@@ -20,6 +20,7 @@ services:
     environment:
       MONGO_DB_URI: mongodb://root:pass@mongo:27017
       TOUR_SERVICE_ADDRESS: ${TOUR_SERVICE_ADDRESS}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
     logging: *fluent-bit
     depends_on:
       - mongo
@@ -35,6 +36,7 @@ services:
     restart: always
     environment:
       BLOG_SERVICE_ADDRESS: ${BLOG_SERVICE_ADDRESS}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
     networks:
       - network
       - monitoring
@@ -52,6 +54,7 @@ services:
     restart: always
     environment:
       AUTH_SERVICE_ADDRESS: ${AUTH_SERVICE_ADDRESS}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
     networks:
       - network
       - monitoring
@@ -69,6 +72,7 @@ services:
     restart: always
     environment:
       USER_MANAGEMENT_SERVICE_ADDRESS: ${USER_MANAGEMENT_SERVICE_ADDRESS}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
     networks:
       - network
       - monitoring
@@ -115,6 +119,7 @@ services:
       AUTH_SERVICE_ADDRESS: auth_service:8084
       USER_MANAGEMENT_SERVICE_ADDRESS: user_service:8089
       GATEWAY_ADDRESS: ${GATEWAY_ADDRESS}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
     depends_on:
       - tour-service
       - blog-service
