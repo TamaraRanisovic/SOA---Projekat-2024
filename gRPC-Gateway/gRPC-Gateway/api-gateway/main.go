@@ -15,11 +15,82 @@ import (
 	"example/gateway/proto/users"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 )
 
+var tp *trace.TracerProvider
+
+func initTracer() (*trace.TracerProvider, error) {
+	url := os.Getenv("JAEGER_ENDPOINT")
+	if len(url) > 0 {
+		return initJaegerTracer(url)
+	} else {
+		return initFileTracer()
+	}
+}
+
+func initFileTracer() (*trace.TracerProvider, error) {
+	log.Println("Initializing tracing to traces.json")
+	f, err := os.Create("traces.json")
+	if err != nil {
+		return nil, err
+	}
+	exporter, err := stdouttrace.New(
+		stdouttrace.WithWriter(f),
+		stdouttrace.WithPrettyPrint(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return trace.NewTracerProvider(
+		trace.WithBatcher(exporter),
+		trace.WithSampler(trace.AlwaysSample()),
+	), nil
+}
+
+func initJaegerTracer(url string) (*trace.TracerProvider, error) {
+	log.Printf("Initializing tracing to jaeger at %s\n", url)
+	exporter, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(url)))
+	if err != nil {
+		return nil, err
+	}
+	return trace.NewTracerProvider(
+		trace.WithBatcher(exporter),
+		trace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String("api_gateway"),
+		)),
+	), nil
+}
+
 func main() {
+
+	log.SetOutput(os.Stderr)
+
+	// OpenTelemetry
+	var err error
+	tp, err = initTracer()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}()
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
 	cfg := config.GetConfig()
 
 	// Create a connection to the TourService
@@ -112,13 +183,19 @@ func main() {
 		log.Fatalln("Failed to register UserService gateway:", err)
 	}
 
-	gwServer := &http.Server{
+	// Create a new HTTP handler function that wraps the ServeMux
+	httpHandler := func(w http.ResponseWriter, r *http.Request) {
+		gwmux.ServeHTTP(w, r)
+	}
+
+	// Wrap the HTTP handler with the tracer
+	httpServer := &http.Server{
 		Addr:    cfg.Address,
-		Handler: gwmux,
+		Handler: http.HandlerFunc(httpHandler),
 	}
 
 	go func() {
-		if err := gwServer.ListenAndServe(); err != nil {
+		if err := httpServer.ListenAndServe(); err != nil {
 			log.Fatal("server error: ", err)
 		}
 	}()
@@ -128,7 +205,7 @@ func main() {
 
 	<-stopCh
 
-	if err = gwServer.Close(); err != nil {
+	if err = httpServer.Close(); err != nil {
 		log.Fatalln("error while stopping server: ", err)
 	}
 }
