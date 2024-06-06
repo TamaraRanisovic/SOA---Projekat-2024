@@ -7,12 +7,14 @@ import (
 	"tourservice/model"
 	"tourservice/proto/tours"
 	"tourservice/proto/users"
-
 	"tourservice/repo"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type TourHandler struct {
@@ -22,15 +24,24 @@ type TourHandler struct {
 	UserServiceClient users.UserServiceClient
 }
 
-// Injecting the logger makes this code much more testable.
 func NewTourHandler(l *log.Logger, r *repo.TourRepository, userServiceClient users.UserServiceClient) *TourHandler {
 	return &TourHandler{logger: l, repo: r, UserServiceClient: userServiceClient}
 }
 
+// GetTracer returns the tracer to be used for tracing.
+func (h *TourHandler) GetTracer() trace.Tracer {
+	return otel.Tracer("tourservice.handler.TourHandler")
+}
+
 func (h TourHandler) GetAllTours(ctx context.Context, s *emptypb.Empty) (*tours.GetAllToursResponse, error) {
+	tr := h.GetTracer()
+	ctx, span := tr.Start(ctx, "TourHandler.GetAllTours")
+	defer span.End()
+
 	toursList, err := h.repo.GetAll()
 	if err != nil {
-		return nil, err
+		h.logger.Printf("Error fetching tours: %v", err)
+		return nil, status.Errorf(codes.Internal, "Error fetching tours")
 	}
 
 	var response tours.GetAllToursResponse
@@ -50,6 +61,10 @@ func (h TourHandler) GetAllTours(ctx context.Context, s *emptypb.Empty) (*tours.
 }
 
 func (h TourHandler) GetTourById(ctx context.Context, req *tours.GetTourByIdRequest) (*tours.GetTourByIdResponse, error) {
+	tr := h.GetTracer()
+	ctx, span := tr.Start(ctx, "TourHandler.GetTourById")
+	defer span.End()
+
 	id := req.Id
 
 	tour, err := h.repo.GetById(id)

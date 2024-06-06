@@ -15,6 +15,8 @@ import (
 	"userservice.com/proto/users"
 	pb "userservice.com/proto/users" // Update this to the correct import path
 	"userservice.com/service"
+
+	"go.opentelemetry.io/otel"
 )
 
 type AccountHandler struct {
@@ -39,6 +41,10 @@ type Claims struct {
 }
 
 func (handler *AccountHandler) AuthenticateGuide(ctx context.Context, req *pb.TokenRequest) (*empty.Empty, error) {
+	tr := otel.Tracer("userservice.handlers.AccountHandler.AuthenticateGuide")
+	ctx, span := tr.Start(ctx, "AuthenticateGuide")
+	defer span.End()
+
 	var role model.Role = 1
 
 	// Call the gRPC service to decode the token
@@ -65,6 +71,10 @@ func (handler *AccountHandler) AuthenticateGuide(ctx context.Context, req *pb.To
 }
 
 func (handler *AccountHandler) GetUserByToken(ctx context.Context, req *pb.TokenRequest) (*pb.UserIdResponse, error) {
+	tr := otel.Tracer("userservice.handlers.AccountHandler.GetUserByToken")
+	ctx, span := tr.Start(ctx, "GetUserByToken")
+	defer span.End()
+
 	// Call the gRPC service to decode the token
 	resp, err := handler.AuthServiceClient.DecodeToken(ctx, &auth.DecodeTokenRequest{Token: req.Token})
 	if err != nil {
